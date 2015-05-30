@@ -1,0 +1,9 @@
+# Intermediate files
+.o
+
+# Object file directory
+obj
+
+# Final executable
+dong
+
