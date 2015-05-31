@@ -1,0 +1,10 @@
+{
+    "name":         "dong",
+    "description":  "A Pong implementation",
+    "copyright":    "Copyright © 2015, CheeseLord and kronmillerg",
+    "authors":      ["CheeseLord", "kronmillerg"],
+    "importPaths":  ["src"],
+    "targetType":   "executable",
+    "dependencies": {
+    }
+}

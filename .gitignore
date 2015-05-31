@@ -1,8 +1,9 @@
-# Intermediate files
-.o
-
-# Object file directory
-obj
+# dub files
+.dub
+docs.json
+__dummy.html
+*.o
+*.obj
 
 # Final executable
 dong
