@@ -6,5 +6,6 @@
     "importPaths":  ["src"],
     "targetType":   "executable",
     "dependencies": {
+        "glamour": "*",
     }
 }
