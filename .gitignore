@@ -5,6 +5,9 @@ __dummy.html
 *.o
 *.obj
 
+# TODO: Figure out what to do with this file.
+dub.selections.json
+
 # Final executable
 dong
 
