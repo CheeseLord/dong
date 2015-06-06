@@ -9,7 +9,7 @@ void main()
     while (true)
     {
         // FIXME: Magic number bad.
-        int frameRate = 30;
+        int frameRate = 5;
         Duration frameLength = dur!"seconds"(1) / frameRate;
 
         MonoTime start = MonoTime.currTime;
@@ -21,8 +21,9 @@ void main()
 
         Thread.sleep(frameLength - elapsed);
 
+        writefln("Are we there yet?");
         // FIXME: Take this out when there's another way to quit.
-        break;
+        // break;
     }
 }
 
