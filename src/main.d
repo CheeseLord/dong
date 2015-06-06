@@ -27,10 +27,8 @@ void main()
         SDL_Quit();
     }
 
-    int count = 0;
-
     // Run the main game loop.
-    while (true)
+    MAIN_LOOP: while (true)
     {
         // FIXME: Magic number bad.
         int frameRate = 5;
@@ -39,10 +37,12 @@ void main()
         MonoTime start = MonoTime.currTime;
 
         // FIXME: Do stuff here.
-        count += 1;
-
-        if (count > frameRate * 5) {
-            break;
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            writefln("Got an event. Type = %s", event.type);
+            if (event.type == SDL_QUIT) {
+                break MAIN_LOOP;
+            }
         }
 
         writefln("Are we there yet?");
