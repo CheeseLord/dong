@@ -6,7 +6,6 @@
     "importPaths":  ["src"],
     "targetType":   "executable",
     "dependencies": {
-        "glamour":       "*",
         "derelict-sdl2": "~>1.9.5"
     }
 }
