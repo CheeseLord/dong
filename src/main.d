@@ -31,7 +31,6 @@ void main()
     // Create a surface and paint it black.
     SDL_Surface *surface = SDL_GetWindowSurface(window);
     SDL_FillRect(surface, null,  SDL_MapRGB(surface.format, 0, 0, 0));
-    SDL_UpdateWindowSurface(window);
 
     // Run the main game loop.
     MAIN_LOOP: while (true)
@@ -54,6 +53,7 @@ void main()
         }
 
         writefln("Are we there yet?");
+        SDL_UpdateWindowSurface(window);
 
         MonoTime end = MonoTime.currTime;
         Duration elapsed = end - start;
