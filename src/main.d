@@ -32,15 +32,22 @@ void main()
     SDL_Surface *surface = SDL_GetWindowSurface(window);
     SDL_FillRect(surface, null,  SDL_MapRGB(surface.format, 0, 0, 0));
 
+    // The time at which the previous iteration of the event loop began.
+    MonoTime prevStartTime = MonoTime.currTime;
+
+    // FIXME: Magic number bad.
+    int frameRate = 5;
+    Duration frameLength = dur!"seconds"(1) / frameRate;
+
     // Run the main game loop.
     MAIN_LOOP: while (true)
     {
-        // FIXME: Magic number bad.
-        int frameRate = 5;
-        Duration frameLength = dur!"seconds"(1) / frameRate;
+        // Get the time at which this iteration of the event loop begins.
+        MonoTime currStartTime = MonoTime.currTime;
 
-        // FIXME: Handle time better.
-        MonoTime start = MonoTime.currTime;
+        // Update the game state, based on the amount of time elapsed since
+        // the previous event loop iteration.
+        UpdateGame(currStartTime - prevStartTime);
 
         // FIXME: Do stuff here.
         SDL_Event event;
@@ -55,11 +62,18 @@ void main()
         writefln("Are we there yet?");
         SDL_UpdateWindowSurface(window);
 
-        MonoTime end = MonoTime.currTime;
-        Duration elapsed = end - start;
+        prevStartTime = currStartTime;
 
-        Thread.sleep(frameLength - elapsed);
+        // Sleep for the rest of the frame.
+        // Note: we don't need to check whether this is negative because
+        // Thread.sleep treats a negative value as if we passed zero.
+        Thread.sleep(frameLength - (MonoTime.currTime - currStartTime));
     }
+}
+
+void UpdateGame(Duration elapsedTime)
+{
+    writefln("Updating game. %s elapsed.", elapsedTime);
 }
 
 string GetEventTypeName(uint eventType)
