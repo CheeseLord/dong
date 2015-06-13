@@ -8,11 +8,12 @@ import derelict.sdl2.sdl;
 
 void main()
 {
-    // Load shared libraries.
+    // Set up SDL.
     DerelictSDL2.load();
-
     SDL_Init(SDL_INIT_VIDEO);
 
+    // Try creating a window.
+    // FIXME: Remove magic numbers.
     SDL_Window *window = SDL_CreateWindow("Dong",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         640, 480, SDL_WINDOW_OPENGL);
@@ -22,15 +23,16 @@ void main()
         return;
     }
 
+    // Create a surface and paint it black.
+    SDL_Surface *surface = SDL_GetWindowSurface(window);
+    SDL_FillRect(surface, null,  SDL_MapRGB(surface.format, 0, 0, 0));
+
+    // Make sure SDL gets cleaned up when we're done.
     scope(exit) {
         writefln("Exiting.");
         SDL_DestroyWindow(window);
         SDL_Quit();
     }
-
-    // Create a surface and paint it black.
-    SDL_Surface *surface = SDL_GetWindowSurface(window);
-    SDL_FillRect(surface, null,  SDL_MapRGB(surface.format, 0, 0, 0));
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
@@ -45,10 +47,6 @@ void main()
         // Get the time at which this iteration of the event loop begins.
         MonoTime currStartTime = MonoTime.currTime;
 
-        // Update the game state, based on the amount of time elapsed since
-        // the previous event loop iteration.
-        UpdateGame(currStartTime - prevStartTime);
-
         // FIXME: Do stuff here.
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -59,7 +57,11 @@ void main()
             }
         }
 
-        writefln("Are we there yet?");
+        // Update the game state, based on the amount of time elapsed since
+        // the previous event loop iteration.
+        UpdateGame(currStartTime - prevStartTime);
+
+        // Redraw everything.
         SDL_UpdateWindowSurface(window);
 
         prevStartTime = currStartTime;
