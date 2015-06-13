@@ -52,7 +52,7 @@ void main()
         // FIXME: Do stuff here.
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            writefln("Got an event. Type = %s (%s)", event.type,
+            debug writefln("Got an event. Type = %s (%s)", event.type,
                 GetEventTypeName(event.type));
             if (event.type == SDL_QUIT) {
                 break MAIN_LOOP;
@@ -73,7 +73,12 @@ void main()
 
 void UpdateGame(Duration elapsedTime)
 {
-    writefln("Updating game. %s elapsed.", elapsedTime);
+    debug {
+        long  secs;
+        ulong hnsecs;
+        elapsedTime.split!("seconds", "hnsecs")(secs, hnsecs);
+        writefln("Updating game. %s.%07s seconds elapsed.", secs, hnsecs);
+    }
 }
 
 string GetEventTypeName(uint eventType)
