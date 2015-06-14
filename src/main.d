@@ -197,23 +197,14 @@ void WorldToScreenRect(out ScreenRect sRect, ScreenRect sWorldRect,
     double horizontalScale = sWorldRect.w / gameState.worldWidth;
     double verticalScale   = sWorldRect.h / gameState.worldHeight;
 
-    // Convert the rect. Create a copy of the rect on the stack because (as far
-    // as I can tell) D won't let us provide names for the fields of a struct
-    // when assigning values to them unless we do it as part of a declaration
-    // (or initialize them separately).
-    ScreenRect mySRect = {
+    // Convert the rect.
+    sRect = ScreenRect(
         // Note: if the world started at anything other than (0, 0), we'd need
         // to subtract its top-left coordinates before rescaling x and y.
-        x: cast(int) (horizontalScale * wRect.x + sWorldRect.x),
-        y: cast(int) (verticalScale   * wRect.y + sWorldRect.y),
-        w: cast(int) (horizontalScale * wRect.w),
-        h: cast(int) (verticalScale   * wRect.h)
-    };
-
-    // Actually store the rect in the output variable where it belongs. If the
-    // D compiler is at all intelligent, it should just write the values
-    // directly into sRect instead of actually creating a second rect, but I
-    // haven't actually checked the generated assembly.
-    sRect = mySRect;
+        cast(int) (horizontalScale * wRect.x + sWorldRect.x), // x
+        cast(int) (verticalScale   * wRect.y + sWorldRect.y), // y
+        cast(int) (horizontalScale * wRect.w),                // width
+        cast(int) (verticalScale   * wRect.h)                 // height
+    );
 }
 
