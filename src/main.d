@@ -6,6 +6,28 @@ import core.thread;
 
 import derelict.sdl2.sdl;
 
+
+struct _GameState {
+    // Coordinates of top-left corner of ball, in pixels, relative to top-left
+    // of screen.
+    // FIXME: Use screen-independent coordinates. And floats?
+    double ballX;
+    double ballY;
+
+    // Velocity of the ball, in pixels per second.
+    double ballVX;
+    double ballVY;
+
+    // Size of the ball, in pixels. I'm still making this a double for now
+    // because eventually it's going to need to be in screen-independent
+    // coordinates, so it'll be converted along with the rest of these.
+    double ballWidth;
+    double ballHeight;
+}
+
+_GameState gameState;
+
+
 void main()
 {
     // Set up SDL.
@@ -25,7 +47,7 @@ void main()
 
     // Create a surface and paint it black.
     SDL_Surface *surface = SDL_GetWindowSurface(window);
-    SDL_FillRect(surface, null,  SDL_MapRGB(surface.format, 0, 0, 0));
+    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
 
     // Make sure SDL gets cleaned up when we're done.
     scope(exit) {
@@ -34,11 +56,19 @@ void main()
         SDL_Quit();
     }
 
+    // Initialize game state.
+    gameState.ballX  = surface.w / 10;
+    gameState.ballY  = surface.h / 2;
+    gameState.ballVX = 100.0;
+    gameState.ballVY = 0.0;
+    gameState.ballWidth  = 10.0;
+    gameState.ballHeight = 10.0;
+
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
 
     // FIXME: Magic number bad.
-    int frameRate = 5;
+    int frameRate = 20;
     Duration frameLength = dur!"seconds"(1) / frameRate;
 
     // Run the main game loop.
@@ -61,26 +91,54 @@ void main()
         // the previous event loop iteration.
         UpdateGame(currStartTime - prevStartTime);
 
-        // Redraw everything.
+        // Draw the current game state.
+        RenderGame(surface);
+
+        // Update the window to actually display the newly drawn game state.
         SDL_UpdateWindowSurface(window);
 
         prevStartTime = currStartTime;
 
-        // Sleep for the rest of the frame.
-        // Note: we don't need to check whether this is negative because
-        // Thread.sleep treats a negative value as if we passed zero.
-        Thread.sleep(frameLength - (MonoTime.currTime - currStartTime));
+        // Sleep for the rest of the frame, unless we've taken too much time
+        // already.
+        Duration timeToSleep = frameLength -
+                               (MonoTime.currTime - currStartTime);
+        if (!timeToSleep.isNegative)
+            Thread.sleep(timeToSleep);
     }
 }
 
 void UpdateGame(Duration elapsedTime)
 {
+    // Convert the elapsedTime to seconds.
+    long secs, nsecs;
+    elapsedTime.split!("seconds", "nsecs")(secs, nsecs);
+    double elapsedSeconds = cast(double)(secs) + cast(double)(nsecs) / 1.0e9;
+
     debug {
-        long  secs;
-        ulong hnsecs;
-        elapsedTime.split!("seconds", "hnsecs")(secs, hnsecs);
-        writefln("Updating game. %s.%07s seconds elapsed.", secs, hnsecs);
+        writefln("Updating game. %s.%07s seconds elapsed.", secs, nsecs / 100);
     }
+
+    // Move the ball, based on its current velocity.
+    gameState.ballX += gameState.ballVX * elapsedSeconds;
+    gameState.ballY += gameState.ballVY * elapsedSeconds;
+
+    debug {
+        writefln("    Ball is at (%s, %s).", gameState.ballX, gameState.ballY);
+    }
+}
+
+void RenderGame(SDL_Surface *surface)
+{
+    SDL_Rect ballRect = {
+        x: cast(int) gameState.ballX,
+        y: cast(int) gameState.ballY,
+        w: cast(int) gameState.ballWidth,
+        h: cast(int) gameState.ballHeight
+    };
+
+    SDL_FillRect(surface, null,      SDL_MapRGB(surface.format, 0, 0,   0));
+    SDL_FillRect(surface, &ballRect, SDL_MapRGB(surface.format, 0, 191, 0));
 }
 
 string GetEventTypeName(uint eventType)
