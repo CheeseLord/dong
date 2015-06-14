@@ -45,7 +45,7 @@ void main()
     SDL_Init(SDL_INIT_VIDEO);
 
     // Make sure SDL gets cleaned up when we're done.
-    scope(exit) {
+    scope (exit) {
         writefln("Exiting.");
         SDL_Quit();
     }
@@ -66,15 +66,15 @@ void main()
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
 
     // Make sure the window gets cleaned up when we're done.
-    scope(exit) SDL_DestroyWindow(window);
+    scope (exit) SDL_DestroyWindow(window);
 
     // Initialize game state.
+    gameState.ballWidth  = 3.0;
+    gameState.ballHeight = 3.0;
     gameState.ballX  = gameState.worldWidth / 10;
-    gameState.ballY  = gameState.worldHeight / 2;
+    gameState.ballY  = gameState.worldHeight / 2 - gameState.ballHeight / 2;
     gameState.ballVX = 30.0;
     gameState.ballVY = 0.0;
-    gameState.ballWidth  = 10.0;
-    gameState.ballHeight = 10.0;
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
