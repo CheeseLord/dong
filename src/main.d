@@ -8,6 +8,11 @@ import derelict.sdl2.sdl;
 
 
 struct _GameState {
+    // Screen-independent size.
+    // FIXME: Remove evil magic numbers.
+    double worldWidth = 200;
+    double worldHeight = 100;
+
     // Coordinates of top-left corner of ball, in pixels, relative to top-left
     // of screen.
     // FIXME: Use screen-independent coordinates. And floats?
@@ -57,9 +62,9 @@ void main()
     }
 
     // Initialize game state.
-    gameState.ballX  = surface.w / 10;
-    gameState.ballY  = surface.h / 2;
-    gameState.ballVX = 100.0;
+    gameState.ballX  = gameState.worldWidth / 10;
+    gameState.ballY  = gameState.worldHeight / 2;
+    gameState.ballVX = 30.0;
     gameState.ballVY = 0.0;
     gameState.ballWidth  = 10.0;
     gameState.ballHeight = 10.0;
@@ -128,17 +133,43 @@ void UpdateGame(Duration elapsedTime)
     }
 }
 
+void drawRect(SDL_Surface *surface, SDL_Rect *worldRect, Uint32 color)
+{
+    // Find the scale factors.
+    double horizontalScale = surface.w / gameState.worldWidth;
+    double verticalScale   = surface.h / gameState.worldHeight;
+
+    // Create the rectangle.
+    SDL_Rect surfaceRect = {
+        // NOTE: If we had an offset, we'd subtract it here.
+        x: cast(int) (horizontalScale * worldRect.x),
+        y: cast(int) (verticalScale   * worldRect.y),
+        w: cast(int) (horizontalScale * worldRect.w),
+        h: cast(int) (verticalScale   * worldRect.h),
+    };
+
+    // Draw to the screen.
+    SDL_FillRect(surface, &surfaceRect, color);
+}
+
 void RenderGame(SDL_Surface *surface)
 {
+    SDL_Rect backgroundRect = {
+        x: cast(int) 0,
+        y: cast(int) 0,
+        w: cast(int) gameState.worldWidth,
+        h: cast(int) gameState.worldHeight
+    };
+
     SDL_Rect ballRect = {
         x: cast(int) gameState.ballX,
         y: cast(int) gameState.ballY,
         w: cast(int) gameState.ballWidth,
-        h: cast(int) gameState.ballHeight
+        h: cast(int) gameState.ballHeight,
     };
 
-    SDL_FillRect(surface, null,      SDL_MapRGB(surface.format, 0, 0,   0));
-    SDL_FillRect(surface, &ballRect, SDL_MapRGB(surface.format, 0, 191, 0));
+    drawRect(surface, &backgroundRect, SDL_MapRGB(surface.format, 0, 0,   0));
+    drawRect(surface, &ballRect,       SDL_MapRGB(surface.format, 0, 191, 0));
 }
 
 string GetEventTypeName(uint eventType)
