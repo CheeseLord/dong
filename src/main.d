@@ -13,19 +13,15 @@ struct _GameState {
     double worldWidth = 200;
     double worldHeight = 100;
 
-    // Coordinates of top-left corner of ball, in pixels, relative to top-left
-    // of screen.
-    // FIXME: Use screen-independent coordinates. And floats?
+    // Coordinates of top-left corner of ball.
     double ballX;
     double ballY;
 
-    // Velocity of the ball, in pixels per second.
+    // Velocity of the ball.
     double ballVX;
     double ballVY;
 
-    // Size of the ball, in pixels. I'm still making this a double for now
-    // because eventually it's going to need to be in screen-independent
-    // coordinates, so it'll be converted along with the rest of these.
+    // Size of the ball.
     double ballWidth;
     double ballHeight;
 }
