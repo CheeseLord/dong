@@ -22,12 +22,17 @@ class Entity {
     private double    xVel_;
     private double    yVel_;
 
-    this(WorldRect startWRect) {
+    this(WorldRect startWRect, double startXVel = 0, double startYVel = 0) {
         wRect_ = startWRect;
+        xVel_  = startXVel;
+        yVel_  = startYVel;
     }
 
-    this(double x, double y, double w, double h) {
+    this(double x, double y, double w, double h,
+            double startXVel = 0.0, double startYVel = 0.0) {
         wRect_ = WorldRect(x, y, w, h);
+        xVel_ = startXVel;
+        yVel_ = startYVel;
     }
 
     // Accessors and mutators for all of our members.
@@ -85,14 +90,16 @@ void main()
     scope (exit) SDL_DestroyWindow(window);
 
     // Initialize game state.
-    gameState.ball = new Entity(CenteredWRect(
-        gameState.worldWidth  / 10, // x
-        gameState.worldHeight / 2,  // y
-        3.0,                        // width
-        3.0                         // height
-    ));
-    gameState.ball.xVel = 30.0;
-    gameState.ball.yVel = 0.0;
+    gameState.ball = new Entity(
+        CenteredWRect(
+            gameState.worldWidth  / 10, // x
+            gameState.worldHeight / 2,  // y
+            3.0,                        // width
+            3.0                         // height
+        ),
+        30.0,                           // x velocity
+        0.0,                            // x velocity
+    );
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
