@@ -7,6 +7,15 @@ import core.thread;
 import derelict.sdl2.sdl;
 
 
+struct WorldRect {
+    double x;
+    double y;
+    double w;
+    double h;
+}
+
+alias ScreenRect = SDL_Rect;
+
 struct _GameState {
     // Screen-independent size.
     // FIXME: Remove evil magic numbers.
@@ -35,6 +44,12 @@ void main()
     DerelictSDL2.load();
     SDL_Init(SDL_INIT_VIDEO);
 
+    // Make sure SDL gets cleaned up when we're done.
+    scope(exit) {
+        writefln("Exiting.");
+        SDL_Quit();
+    }
+
     // Try creating a window.
     // FIXME: Remove magic numbers.
     SDL_Window *window = SDL_CreateWindow("Dong",
@@ -50,12 +65,8 @@ void main()
     SDL_Surface *surface = SDL_GetWindowSurface(window);
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
 
-    // Make sure SDL gets cleaned up when we're done.
-    scope(exit) {
-        writefln("Exiting.");
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-    }
+    // Make sure the window gets cleaned up when we're done.
+    scope(exit) SDL_DestroyWindow(window);
 
     // Initialize game state.
     gameState.ballX  = gameState.worldWidth / 10;
@@ -147,40 +158,62 @@ void UpdateGame(Duration elapsedTime)
 
 void RenderGame(SDL_Surface *surface)
 {
-    SDL_Rect backgroundRect = {
+    // FIXME: This will eventually be not the entire screen.
+    ScreenRect sWorldRect = {
         x: cast(int) 0,
         y: cast(int) 0,
-        w: cast(int) gameState.worldWidth,
-        h: cast(int) gameState.worldHeight
+        w: cast(int) surface.w,
+        h: cast(int) surface.h
     };
 
-    SDL_Rect ballRect = {
+    // FIXME: Store as a rect in the gameState.
+    WorldRect  wBallRect = {
         x: cast(int) gameState.ballX,
         y: cast(int) gameState.ballY,
         w: cast(int) gameState.ballWidth,
         h: cast(int) gameState.ballHeight,
     };
 
-    DrawRect(surface, &backgroundRect, SDL_MapRGB(surface.format, 0, 0,   0));
-    DrawRect(surface, &ballRect,       SDL_MapRGB(surface.format, 0, 191, 0));
+    ScreenRect sBallRect;
+
+    WorldToScreenRect(sBallRect, sWorldRect, wBallRect);
+
+    SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
+    SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
 }
 
-void DrawRect(SDL_Surface *surface, SDL_Rect *worldRect, Uint32 color)
+/**
+ * Convert a rect from world coordinates to screen coordinates.
+ * The resulting rect will be stored in sRect.
+ * sWorldRect is the region of the screen corresponding to the entire world.
+ * wRect is the rect to be converted.
+ * TODO: Magic markup in function comments so parameter names and such get
+ * displayed correctly in generated HTML docs?
+ */
+void WorldToScreenRect(out ScreenRect sRect, ScreenRect sWorldRect,
+                       WorldRect wRect)
 {
     // Find the scale factors.
-    double horizontalScale = surface.w / gameState.worldWidth;
-    double verticalScale   = surface.h / gameState.worldHeight;
+    double horizontalScale = sWorldRect.w / gameState.worldWidth;
+    double verticalScale   = sWorldRect.h / gameState.worldHeight;
 
-    // Create the rectangle.
-    SDL_Rect surfaceRect = {
-        // NOTE: If we had an offset, we'd subtract it here.
-        x: cast(int) (horizontalScale * worldRect.x),
-        y: cast(int) (verticalScale   * worldRect.y),
-        w: cast(int) (horizontalScale * worldRect.w),
-        h: cast(int) (verticalScale   * worldRect.h),
+    // Convert the rect. Create a copy of the rect on the stack because (as far
+    // as I can tell) D won't let us provide names for the fields of a struct
+    // when assigning values to them unless we do it as part of a declaration
+    // (or initialize them separately).
+    ScreenRect mySRect = {
+        // Note: if the world started at anything other than (0, 0), we'd need
+        // to subtract its top-left coordinates before rescaling x and y.
+        x: cast(int) (horizontalScale * wRect.x + sWorldRect.x),
+        y: cast(int) (verticalScale   * wRect.y + sWorldRect.y),
+        w: cast(int) (horizontalScale * wRect.w),
+        h: cast(int) (verticalScale   * wRect.h)
     };
 
-    // Draw to the screen.
-    SDL_FillRect(surface, &surfaceRect, color);
+    // Actually store the rect in the output variable where it belongs. If the
+    // D compiler is at all intelligent, it should just write the values
+    // directly into sRect instead of actually creating a second rect, but I
+    // haven't actually checked the generated assembly.
+    sRect = mySRect;
 }
 
