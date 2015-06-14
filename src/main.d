@@ -10,7 +10,7 @@ import derelict.sdl2.sdl;
 struct _GameState {
     // Screen-independent size.
     // FIXME: Remove evil magic numbers.
-    double worldWidth = 200;
+    double worldWidth  = 200;
     double worldHeight = 100;
 
     // Coordinates of top-left corner of ball.
@@ -109,6 +109,22 @@ void main()
     }
 }
 
+string GetEventTypeName(uint eventType)
+{
+    switch(eventType) {
+        case SDL_QUIT:              return "quit";
+        case SDL_KEYDOWN:           return "key down";
+        case SDL_KEYUP:             return "key up";
+        case SDL_TEXTEDITING:       return "text editing";
+        case SDL_TEXTINPUT:         return "text input";
+        case SDL_MOUSEMOTION:       return "mouse motion";
+        case SDL_MOUSEBUTTONDOWN:   return "mouse button down";
+        case SDL_MOUSEBUTTONUP:     return "mouse button up";
+        case SDL_MOUSEWHEEL:        return "mouse wheel";
+        default:                    return "<something else>";
+    }
+}
+
 void UpdateGame(Duration elapsedTime)
 {
     // Convert the elapsedTime to seconds.
@@ -129,25 +145,6 @@ void UpdateGame(Duration elapsedTime)
     }
 }
 
-void drawRect(SDL_Surface *surface, SDL_Rect *worldRect, Uint32 color)
-{
-    // Find the scale factors.
-    double horizontalScale = surface.w / gameState.worldWidth;
-    double verticalScale   = surface.h / gameState.worldHeight;
-
-    // Create the rectangle.
-    SDL_Rect surfaceRect = {
-        // NOTE: If we had an offset, we'd subtract it here.
-        x: cast(int) (horizontalScale * worldRect.x),
-        y: cast(int) (verticalScale   * worldRect.y),
-        w: cast(int) (horizontalScale * worldRect.w),
-        h: cast(int) (verticalScale   * worldRect.h),
-    };
-
-    // Draw to the screen.
-    SDL_FillRect(surface, &surfaceRect, color);
-}
-
 void RenderGame(SDL_Surface *surface)
 {
     SDL_Rect backgroundRect = {
@@ -164,23 +161,26 @@ void RenderGame(SDL_Surface *surface)
         h: cast(int) gameState.ballHeight,
     };
 
-    drawRect(surface, &backgroundRect, SDL_MapRGB(surface.format, 0, 0,   0));
-    drawRect(surface, &ballRect,       SDL_MapRGB(surface.format, 0, 191, 0));
+    DrawRect(surface, &backgroundRect, SDL_MapRGB(surface.format, 0, 0,   0));
+    DrawRect(surface, &ballRect,       SDL_MapRGB(surface.format, 0, 191, 0));
 }
 
-string GetEventTypeName(uint eventType)
+void DrawRect(SDL_Surface *surface, SDL_Rect *worldRect, Uint32 color)
 {
-    switch(eventType) {
-        case SDL_QUIT:              return "quit";
-        case SDL_KEYDOWN:           return "key down";
-        case SDL_KEYUP:             return "key up";
-        case SDL_TEXTEDITING:       return "text editing";
-        case SDL_TEXTINPUT:         return "text input";
-        case SDL_MOUSEMOTION:       return "mouse motion";
-        case SDL_MOUSEBUTTONDOWN:   return "mouse button down";
-        case SDL_MOUSEBUTTONUP:     return "mouse button up";
-        case SDL_MOUSEWHEEL:        return "mouse wheel";
-        default:                    return "<something else>";
-    }
+    // Find the scale factors.
+    double horizontalScale = surface.w / gameState.worldWidth;
+    double verticalScale   = surface.h / gameState.worldHeight;
+
+    // Create the rectangle.
+    SDL_Rect surfaceRect = {
+        // NOTE: If we had an offset, we'd subtract it here.
+        x: cast(int) (horizontalScale * worldRect.x),
+        y: cast(int) (verticalScale   * worldRect.y),
+        w: cast(int) (horizontalScale * worldRect.w),
+        h: cast(int) (verticalScale   * worldRect.h),
+    };
+
+    // Draw to the screen.
+    SDL_FillRect(surface, &surfaceRect, color);
 }
 
