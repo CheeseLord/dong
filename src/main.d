@@ -16,23 +16,39 @@ struct WorldRect {
 
 alias ScreenRect = SDL_Rect;
 
+
+class Entity {
+    private WorldRect wRect_;
+    private double    xVel_;
+    private double    yVel_;
+
+    this(WorldRect startWRect) {
+        wRect_ = startWRect;
+    }
+
+    this(double x, double y, double w, double h) {
+        wRect_ = WorldRect(x, y, w, h);
+    }
+
+    // Accessors and mutators for all of our members.
+    // Because encapsulation? What's that?
+    pure @property ref WorldRect wRect() { return wRect_;   }
+    pure @property ref double        x() { return wRect_.x; }
+    pure @property ref double        y() { return wRect_.y; }
+    pure @property ref double        w() { return wRect_.w; }
+    pure @property ref double        h() { return wRect_.h; }
+    pure @property ref double     xVel() { return xVel_;    }
+    pure @property ref double     yVel() { return yVel_;    }
+}
+
+
 struct _GameState {
     // Screen-independent size.
     // FIXME: Remove evil magic numbers.
-    double worldWidth  = 200;
-    double worldHeight = 100;
+    double worldWidth  = 200.0;
+    double worldHeight = 100.0;
 
-    // Coordinates of top-left corner of ball.
-    double ballX;
-    double ballY;
-
-    // Velocity of the ball.
-    double ballVX;
-    double ballVY;
-
-    // Size of the ball.
-    double ballWidth;
-    double ballHeight;
+    Entity ball;
 }
 
 _GameState gameState;
@@ -69,12 +85,14 @@ void main()
     scope (exit) SDL_DestroyWindow(window);
 
     // Initialize game state.
-    gameState.ballWidth  = 3.0;
-    gameState.ballHeight = 3.0;
-    gameState.ballX  = gameState.worldWidth / 10;
-    gameState.ballY  = gameState.worldHeight / 2 - gameState.ballHeight / 2;
-    gameState.ballVX = 30.0;
-    gameState.ballVY = 0.0;
+    gameState.ball = new Entity(CenteredWRect(
+        gameState.worldWidth  / 10, // x
+        gameState.worldHeight / 2,  // y
+        3.0,                        // width
+        3.0                         // height
+    ));
+    gameState.ball.xVel = 30.0;
+    gameState.ball.yVel = 0.0;
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
@@ -120,6 +138,16 @@ void main()
     }
 }
 
+WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
+{
+    return WorldRect(
+        centerX - w / 2, // x
+        centerY - h / 2, // y
+        w,               // width
+        h                // height
+    );
+}
+
 string GetEventTypeName(uint eventType)
 {
     switch(eventType) {
@@ -148,11 +176,12 @@ void UpdateGame(Duration elapsedTime)
     }
 
     // Move the ball, based on its current velocity.
-    gameState.ballX += gameState.ballVX * elapsedSeconds;
-    gameState.ballY += gameState.ballVY * elapsedSeconds;
+    gameState.ball.x += gameState.ball.xVel * elapsedSeconds;
+    gameState.ball.y += gameState.ball.yVel * elapsedSeconds;
 
     debug {
-        writefln("    Ball is at (%s, %s).", gameState.ballX, gameState.ballY);
+        writefln("    Ball is at (%s, %s).",
+                 gameState.ball.x, gameState.ball.y);
     }
 }
 
@@ -166,17 +195,9 @@ void RenderGame(SDL_Surface *surface)
         h: cast(int) surface.h
     };
 
-    // FIXME: Store as a rect in the gameState.
-    WorldRect  wBallRect = {
-        x: cast(int) gameState.ballX,
-        y: cast(int) gameState.ballY,
-        w: cast(int) gameState.ballWidth,
-        h: cast(int) gameState.ballHeight,
-    };
-
     ScreenRect sBallRect;
 
-    WorldToScreenRect(sBallRect, sWorldRect, wBallRect);
+    WorldToScreenRect(sBallRect, sWorldRect, gameState.ball.wRect);
 
     SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
     SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
