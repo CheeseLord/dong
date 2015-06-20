@@ -13,33 +13,9 @@ import graphics;
 
 void main()
 {
-    // Set up SDL.
-    DerelictSDL2.load();
-    SDL_Init(SDL_INIT_VIDEO);
+    InitGraphics();
 
-    // Make sure SDL gets cleaned up when we're done.
-    scope (exit) {
-        writefln("Exiting.");
-        SDL_Quit();
-    }
-
-    // Try creating a window.
-    // FIXME: Remove magic numbers.
-    SDL_Window *window = SDL_CreateWindow("Dong",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        640, 480, SDL_WINDOW_OPENGL);
-
-    if (window == null) {
-        writefln("Error: failed to create window.");
-        return;
-    }
-
-    // Create a surface and paint it black.
-    SDL_Surface *surface = SDL_GetWindowSurface(window);
-    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
-
-    // Make sure the window gets cleaned up when we're done.
-    scope (exit) SDL_DestroyWindow(window);
+    scope (exit) CleanupGraphics();
 
     // Initialize game state.
     gameState.ball = new Entity(
@@ -81,10 +57,7 @@ void main()
         UpdateGame(currStartTime - prevStartTime);
 
         // Draw the current game state.
-        RenderGame(surface);
-
-        // Update the window to actually display the newly drawn game state.
-        SDL_UpdateWindowSurface(window);
+        RenderGame();
 
         prevStartTime = currStartTime;
 
@@ -117,23 +90,5 @@ void UpdateGame(Duration elapsedTime)
         writefln("    Ball is at (%s, %s).",
                  gameState.ball.x, gameState.ball.y);
     }
-}
-
-void RenderGame(SDL_Surface *surface)
-{
-    // FIXME: This will eventually be not the entire screen.
-    ScreenRect sWorldRect = {
-        x: cast(int) 0,
-        y: cast(int) 0,
-        w: cast(int) surface.w,
-        h: cast(int) surface.h
-    };
-
-    ScreenRect sBallRect;
-
-    WorldToScreenRect(sBallRect, sWorldRect, gameState.ball.wRect);
-
-    SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
-    SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
 }
 

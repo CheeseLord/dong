@@ -1,3 +1,5 @@
+import std.stdio;
+
 // For drawing.
 import derelict.sdl2.sdl;
 
@@ -5,6 +7,67 @@ import derelict.sdl2.sdl;
 import gamestate;
 
 alias ScreenRect = SDL_Rect;
+
+private SDL_Window  *window  = null;
+private SDL_Surface *surface = null;
+
+void InitGraphics()
+{
+    // Set up SDL.
+    DerelictSDL2.load();
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // Try creating a window.
+    // FIXME: Remove magic numbers.
+    window = SDL_CreateWindow("Dong",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        640, 480, SDL_WINDOW_OPENGL);
+
+    // FIXME: Raise exception here. Above, do a
+    // scope (failure) SDL_Quit()..
+    if (window == null) {
+        writefln("Error: failed to create window.");
+        return;
+    }
+
+    // FIXME: scope (failure) SDL_DestroyWindow(window);
+
+    // Create a surface and paint it black.
+    surface = SDL_GetWindowSurface(window);
+    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
+}
+
+void CleanupGraphics()
+{
+    if (window != null) {
+        SDL_DestroyWindow(window);
+    }
+
+    writefln("Exiting.");
+    SDL_Quit();
+}
+
+void RenderGame()
+{
+    // FIXME: This will eventually be not the entire screen.
+    ScreenRect sWorldRect = {
+        x: cast(int) 0,
+        y: cast(int) 0,
+        w: cast(int) surface.w,
+        h: cast(int) surface.h
+    };
+
+    ScreenRect sBallRect;
+
+    WorldToScreenRect(sBallRect, sWorldRect, gameState.ball.wRect);
+
+    SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
+    SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
+
+    // Update the window to actually display the newly drawn game state.
+    SDL_UpdateWindowSurface(window);
+}
+
 
 /**
  * Convert a rect from world coordinates to screen coordinates.
