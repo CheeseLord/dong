@@ -32,13 +32,8 @@ void main()
         MonoTime currStartTime = MonoTime.currTime;
 
         // FIXME: Do stuff here.
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            debug writefln("Got an event. Type = %s (%s)", event.type,
-                GetEventTypeName(event.type));
-            if (event.type == SDL_QUIT) {
-                break MAIN_LOOP;
-            }
+        if (HandleEvents()) {
+            break;
         }
 
         // Update the game state, based on the amount of time elapsed since

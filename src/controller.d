@@ -1,8 +1,27 @@
+import std.stdio;
+
 // For event handling.
 import derelict.sdl2.sdl;
 
 // We need to access entities' states to control them.
 import gamestate;
+
+/**
+ * Returns true if we should exit, false if we should keep going.
+ */
+bool HandleEvents()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        debug writefln("Got an event. Type = %s (%s)", event.type,
+            GetEventTypeName(event.type));
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 string GetEventTypeName(uint eventType)
 {
