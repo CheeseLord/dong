@@ -14,20 +14,9 @@ import graphics;
 void main()
 {
     InitGraphics();
-
     scope (exit) CleanupGraphics();
 
-    // Initialize game state.
-    gameState.ball = new Entity(
-        CenteredWRect(
-            gameState.worldWidth  / 10, // x
-            gameState.worldHeight / 2,  // y
-            3.0,                        // width
-            3.0                         // height
-        ),
-        30.0,                           // x velocity
-        0.0,                            // x velocity
-    );
+    InitGameState();
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;

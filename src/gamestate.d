@@ -45,6 +45,21 @@ struct _GameState {
 
 _GameState gameState;
 
+void InitGameState()
+{
+    // Initialize game state.
+    gameState.ball = new Entity(
+        CenteredWRect(
+            gameState.worldWidth  / 10, // x
+            gameState.worldHeight / 2,  // y
+            3.0,                        // width
+            3.0                         // height
+        ),
+        30.0,                           // x velocity
+        0.0,                            // x velocity
+    );
+}
+
 WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
 {
     return WorldRect(
