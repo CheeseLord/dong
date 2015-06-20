@@ -1,4 +1,8 @@
+// For event handling.
 import derelict.sdl2.sdl;
+
+// We need to access entities' states to control them.
+import gamestate;
 
 string GetEventTypeName(uint eventType)
 {

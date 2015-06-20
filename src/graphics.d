@@ -1,10 +1,8 @@
+// For drawing.
 import derelict.sdl2.sdl;
 
 // We need to read entities' states to draw them.
 import gamestate;
-
-// So that we can convert from world coordinates.
-import physics;
 
 alias ScreenRect = SDL_Rect;
 
