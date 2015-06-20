@@ -6,58 +6,10 @@ import core.thread;
 
 import derelict.sdl2.sdl;
 
-
-struct WorldRect {
-    double x;
-    double y;
-    double w;
-    double h;
-}
-
-alias ScreenRect = SDL_Rect;
-
-
-class Entity {
-    private WorldRect wRect_;
-    private double    xVel_;
-    private double    yVel_;
-
-    this(WorldRect startWRect, double startXVel = 0, double startYVel = 0) {
-        wRect_ = startWRect;
-        xVel_  = startXVel;
-        yVel_  = startYVel;
-    }
-
-    this(double x, double y, double w, double h,
-            double startXVel = 0.0, double startYVel = 0.0) {
-        wRect_ = WorldRect(x, y, w, h);
-        xVel_ = startXVel;
-        yVel_ = startYVel;
-    }
-
-    // Accessors and mutators for all of our members.
-    // Because encapsulation? What's that?
-    pure @property ref WorldRect wRect() { return wRect_;   }
-    pure @property ref double        x() { return wRect_.x; }
-    pure @property ref double        y() { return wRect_.y; }
-    pure @property ref double        w() { return wRect_.w; }
-    pure @property ref double        h() { return wRect_.h; }
-    pure @property ref double     xVel() { return xVel_;    }
-    pure @property ref double     yVel() { return yVel_;    }
-}
-
-
-struct _GameState {
-    // Screen-independent size.
-    // FIXME: Remove evil magic numbers.
-    double worldWidth  = 200.0;
-    double worldHeight = 100.0;
-
-    Entity ball;
-}
-
-_GameState gameState;
-
+import gamestate;
+import controller;
+import physics;
+import graphics;
 
 void main()
 {
@@ -145,31 +97,6 @@ void main()
     }
 }
 
-WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
-{
-    return WorldRect(
-        centerX - w / 2, // x
-        centerY - h / 2, // y
-        w,               // width
-        h                // height
-    );
-}
-
-string GetEventTypeName(uint eventType)
-{
-    switch(eventType) {
-        case SDL_QUIT:              return "quit";
-        case SDL_KEYDOWN:           return "key down";
-        case SDL_KEYUP:             return "key up";
-        case SDL_TEXTEDITING:       return "text editing";
-        case SDL_TEXTINPUT:         return "text input";
-        case SDL_MOUSEMOTION:       return "mouse motion";
-        case SDL_MOUSEBUTTONDOWN:   return "mouse button down";
-        case SDL_MOUSEBUTTONUP:     return "mouse button up";
-        case SDL_MOUSEWHEEL:        return "mouse wheel";
-        default:                    return "<something else>";
-    }
-}
 
 void UpdateGame(Duration elapsedTime)
 {
@@ -208,31 +135,5 @@ void RenderGame(SDL_Surface *surface)
 
     SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
     SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
-}
-
-/**
- * Convert a rect from world coordinates to screen coordinates.
- * The resulting rect will be stored in sRect.
- * sWorldRect is the region of the screen corresponding to the entire world.
- * wRect is the rect to be converted.
- * TODO: Magic markup in function comments so parameter names and such get
- * displayed correctly in generated HTML docs?
- */
-void WorldToScreenRect(out ScreenRect sRect, ScreenRect sWorldRect,
-                       WorldRect wRect)
-{
-    // Find the scale factors.
-    double horizontalScale = sWorldRect.w / gameState.worldWidth;
-    double verticalScale   = sWorldRect.h / gameState.worldHeight;
-
-    // Convert the rect.
-    sRect = ScreenRect(
-        // Note: if the world started at anything other than (0, 0), we'd need
-        // to subtract its top-left coordinates before rescaling x and y.
-        cast(int) (horizontalScale * wRect.x + sWorldRect.x), // x
-        cast(int) (verticalScale   * wRect.y + sWorldRect.y), // y
-        cast(int) (horizontalScale * wRect.w),                // width
-        cast(int) (verticalScale   * wRect.h)                 // height
-    );
 }
 
