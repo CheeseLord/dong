@@ -12,17 +12,17 @@ class Entity {
 
     // FIXME: Add components.
 
-    this(WorldRect startWRect, double startXVel = 0, double startYVel = 0) {
+    this(WorldRect startWRect, double startXVel = 0, double startYVel = 0)
+    {
         wRect_ = startWRect;
         xVel_  = startXVel;
         yVel_  = startYVel;
     }
 
     this(double x, double y, double w, double h,
-            double startXVel = 0.0, double startYVel = 0.0) {
-        wRect_ = WorldRect(x, y, w, h);
-        xVel_ = startXVel;
-        yVel_ = startYVel;
+            double startXVel = 0.0, double startYVel = 0.0)
+    {
+        this(WorldRect(x, y, w, h), startXVel, startYVel);
     }
 
     // Accessors and mutators for all of our members.
@@ -42,7 +42,8 @@ class Entity {
 }
 
 class Ball : Entity {
-    this(WorldRect startWRect, double startXVel = 30.0, double startYVel = 0) {
+    this(WorldRect startWRect, double startXVel = 30.0, double startYVel = 0)
+    {
         super(startWRect, startXVel, startYVel);
     }
 }
