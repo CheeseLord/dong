@@ -10,6 +10,8 @@ class Entity {
     private double    xVel_;
     private double    yVel_;
 
+    // FIXME: Add components.
+
     this(WorldRect startWRect, double startXVel = 0, double startYVel = 0) {
         wRect_ = startWRect;
         xVel_  = startXVel;
@@ -32,6 +34,17 @@ class Entity {
     pure @property ref double        h() { return wRect_.h; }
     pure @property ref double     xVel() { return xVel_;    }
     pure @property ref double     yVel() { return yVel_;    }
+
+    void update()
+    {
+        // FIXME: Actually do things.
+    }
+}
+
+class Ball : Entity {
+    this(WorldRect startWRect, double startXVel = 30.0, double startYVel = 0) {
+        super(startWRect, startXVel, startYVel);
+    }
 }
 
 struct _GameState {
@@ -40,7 +53,7 @@ struct _GameState {
     double worldWidth  = 200.0;
     double worldHeight = 100.0;
 
-    Entity ball;
+    Ball ball;
 }
 
 _GameState gameState;
@@ -48,7 +61,7 @@ _GameState gameState;
 void InitGameState()
 {
     // Initialize game state.
-    gameState.ball = new Entity(
+    gameState.ball = new Ball(
         CenteredWRect(
             gameState.worldWidth  / 10, // x
             gameState.worldHeight / 2,  // y
