@@ -1,3 +1,10 @@
+import std.stdio;
+import core.time;
+
+import controller;
+import physics;
+import graphics;
+
 struct WorldRect {
     double x;
     double y;
@@ -10,13 +17,16 @@ class Entity {
     private double    xVel_;
     private double    yVel_;
 
-    // FIXME: Add components.
+    // FIXME: Add more components.
+    protected PhysicsComponent physics_;
 
     this(WorldRect startWRect, double startXVel = 0, double startYVel = 0)
     {
         wRect_ = startWRect;
         xVel_  = startXVel;
         yVel_  = startYVel;
+
+        physics_ = new PhysicsComponent(this);
     }
 
     this(double x, double y, double w, double h,
@@ -35,9 +45,10 @@ class Entity {
     pure @property ref double     xVel() { return xVel_;    }
     pure @property ref double     yVel() { return yVel_;    }
 
-    void update()
+    void update(double elapsedTime)
     {
         // FIXME: Actually do things.
+        physics_.update(elapsedTime);
     }
 }
 
@@ -72,6 +83,26 @@ void InitGameState()
         30.0,                           // x velocity
         0.0,                            // x velocity
     );
+}
+
+void UpdateWorld(Duration elapsedTime)
+{
+    // Convert the elapsedTime to seconds.
+    long secs, nsecs;
+    elapsedTime.split!("seconds", "nsecs")(secs, nsecs);
+    double elapsedSeconds = cast(double)(secs) + cast(double)(nsecs) / 1.0e9;
+
+    debug {
+        writefln("Updating game. %s.%07s seconds elapsed.", secs, nsecs / 100);
+    }
+
+    // FIXME: Actually loop over a list.
+    gameState.ball.update(elapsedSeconds);
+
+    debug {
+        writefln("    Ball is at (%s, %s).",
+                 gameState.ball.x, gameState.ball.y);
+    }
 }
 
 WorldRect CenteredWRect(double centerX, double centerY, double w, double h)

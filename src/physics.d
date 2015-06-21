@@ -1,27 +1,19 @@
-import std.stdio;
-import core.time;
-
 // We need to access entities' states to move them around in the world.
 import gamestate;
 
-void UpdateWorld(Duration elapsedTime)
-{
-    // Convert the elapsedTime to seconds.
-    long secs, nsecs;
-    elapsedTime.split!("seconds", "nsecs")(secs, nsecs);
-    double elapsedSeconds = cast(double)(secs) + cast(double)(nsecs) / 1.0e9;
+class PhysicsComponent {
+    private Entity parent_;
 
-    debug {
-        writefln("Updating game. %s.%07s seconds elapsed.", secs, nsecs / 100);
+    this(Entity parent)
+    {
+        parent_ = parent;
     }
 
-    // Move the ball, based on its current velocity.
-    gameState.ball.x += gameState.ball.xVel * elapsedSeconds;
-    gameState.ball.y += gameState.ball.yVel * elapsedSeconds;
-
-    debug {
-        writefln("    Ball is at (%s, %s).",
-                 gameState.ball.x, gameState.ball.y);
+    void update(double elapsedTime)
+    {
+        // Update position based on current velocity and elapsed time.
+        parent_.x += parent_.xVel * elapsedTime;
+        parent_.y += parent_.yVel * elapsedTime;
     }
 }
 
