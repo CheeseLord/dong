@@ -26,13 +26,24 @@ class Entity {
         xVel_  = startXVel;
         yVel_  = startYVel;
 
-        physics_ = new PhysicsComponent(this);
+        initComponents();
     }
 
     this(double x, double y, double w, double h,
             double startXVel = 0.0, double startYVel = 0.0)
     {
         this(WorldRect(x, y, w, h), startXVel, startYVel);
+    }
+
+    void update(double elapsedTime)
+    {
+        // FIXME: Actually do things.
+        physics.update(elapsedTime);
+    }
+
+    protected void initComponents()
+    {
+        // Nothing to do here; they'll be initialized lazily.
     }
 
     // Accessors and mutators for all of our members.
@@ -45,10 +56,14 @@ class Entity {
     pure @property ref double     xVel() { return xVel_;    }
     pure @property ref double     yVel() { return yVel_;    }
 
-    void update(double elapsedTime)
+    protected @property PhysicsComponent physics()
     {
-        // FIXME: Actually do things.
-        physics_.update(elapsedTime);
+        // Lazily initialize a default PhysicsComponent if the subclass didn't
+        // create its own.
+        if (physics_ is null) {
+            physics_ = new PhysicsComponent(this);
+        }
+        return physics_;
     }
 }
 
@@ -56,6 +71,11 @@ class Ball : Entity {
     this(WorldRect startWRect, double startXVel = 30.0, double startYVel = 0)
     {
         super(startWRect, startXVel, startYVel);
+    }
+
+    override protected void initComponents()
+    {
+        physics_ = new BallPhysics(this);
     }
 }
 
