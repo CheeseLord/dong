@@ -58,12 +58,15 @@ void RenderGame()
         h: cast(int) surface.h
     };
 
-    ScreenRect sBallRect;
+    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0,   0));
 
-    WorldToScreenRect(sBallRect, sWorldRect, gameState.ball.wRect);
+    foreach (Entity entity; gameState.entities) {
+        ScreenRect sEntityRect;
+        WorldToScreenRect(sEntityRect, sWorldRect, entity.wRect);
 
-    SDL_FillRect(surface, null,       SDL_MapRGB(surface.format, 0, 0,   0));
-    SDL_FillRect(surface, &sBallRect, SDL_MapRGB(surface.format, 0, 191, 0));
+        SDL_FillRect(surface, &sEntityRect,
+                     SDL_MapRGB(surface.format, 0, 191, 0));
+    }
 
     // Update the window to actually display the newly drawn game state.
     SDL_UpdateWindowSurface(window);
@@ -77,6 +80,7 @@ void RenderGame()
  * wRect is the rect to be converted.
  * TODO: Magic markup in function comments so parameter names and such get
  * displayed correctly in generated HTML docs?
+ * FIXME: Why does this not just return sRect??
  */
 void WorldToScreenRect(out ScreenRect sRect, ScreenRect sWorldRect,
                        WorldRect wRect)

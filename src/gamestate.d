@@ -16,7 +16,7 @@ struct _GameState {
     double worldWidth  = 200.0;
     double worldHeight = 100.0;
 
-    Ball ball;
+    Entity[] entities;
 }
 
 _GameState gameState;
@@ -24,7 +24,7 @@ _GameState gameState;
 void InitGameState()
 {
     // Initialize game state.
-    gameState.ball = new Ball(
+    gameState.entities ~= new Ball(
         CenteredWRect(
             gameState.worldWidth  / 10, // x
             gameState.worldHeight / 2,  // y
@@ -48,11 +48,17 @@ void UpdateWorld(Duration elapsedTime)
     }
 
     // FIXME: Actually loop over a list.
-    gameState.ball.update(elapsedSeconds);
+    foreach (Entity entity; gameState.entities) {
+        entity.update(elapsedSeconds);
 
-    debug {
-        writefln("    Ball is at (%s, %s).",
-                 gameState.ball.x, gameState.ball.y);
+        debug {
+            // Quick hack to print the ball's position. I don't like dynamic
+            // casts, but I'll put up with this because it's in a debug block
+            // anyway.
+            if (cast(Ball)(entity) !is null) {
+                writefln("    Ball is at (%s, %s).", entity.x, entity.y);
+            }
+        }
     }
 }
 
