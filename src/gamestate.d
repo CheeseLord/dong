@@ -23,7 +23,53 @@ _GameState gameState;
 
 void InitGameState()
 {
-    // Initialize game state.
+    const double WALL_WIDTH = 5.0;
+
+    // Left wall
+    gameState.entities ~= new Wall(
+        WorldRect(
+            0,
+            0,
+            WALL_WIDTH,
+            gameState.worldHeight
+        ),
+        BounceDirection.RIGHT
+    );
+
+    // Top wall
+    gameState.entities ~= new Wall(
+        WorldRect(
+            0,
+            0,
+            gameState.worldWidth,
+            WALL_WIDTH
+        ),
+        BounceDirection.DOWN
+    );
+
+    // Right wall
+    gameState.entities ~= new Wall(
+        WorldRect(
+            gameState.worldWidth - WALL_WIDTH,
+            0,
+            WALL_WIDTH,
+            gameState.worldHeight
+        ),
+        BounceDirection.LEFT
+    );
+
+    // Bottom wall
+    gameState.entities ~= new Wall(
+        WorldRect(
+            0,
+            gameState.worldHeight - WALL_WIDTH,
+            gameState.worldWidth,
+            WALL_WIDTH
+        ),
+        BounceDirection.UP
+    );
+
+    // The ball
     gameState.entities ~= new Ball(
         CenteredWRect(
             gameState.worldWidth  / 10, // x
