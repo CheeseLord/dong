@@ -61,8 +61,7 @@ void RenderGame()
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0,   0));
 
     foreach (Entity entity; gameState.entities) {
-        ScreenRect sEntityRect;
-        WorldToScreenRect(sEntityRect, sWorldRect, entity.wRect);
+        ScreenRect sEntityRect = WorldToScreenRect(entity.wRect, sWorldRect);
 
         SDL_FillRect(surface, &sEntityRect,
                      SDL_MapRGB(surface.format, 0, 191, 0));
@@ -80,23 +79,23 @@ void RenderGame()
  * wRect is the rect to be converted.
  * TODO: Magic markup in function comments so parameter names and such get
  * displayed correctly in generated HTML docs?
- * FIXME: Why does this not just return sRect??
  */
-void WorldToScreenRect(out ScreenRect sRect, ScreenRect sWorldRect,
-                       WorldRect wRect)
+ScreenRect WorldToScreenRect(WorldRect wRect, ScreenRect sWorldRect)
 {
     // Find the scale factors.
     double horizontalScale = sWorldRect.w / gameState.worldWidth;
     double verticalScale   = sWorldRect.h / gameState.worldHeight;
 
     // Convert the rect.
-    sRect = ScreenRect(
+    ScreenRect sRect = {
         // Note: if the world started at anything other than (0, 0), we'd need
         // to subtract its top-left coordinates before rescaling x and y.
-        cast(int) (horizontalScale * wRect.x + sWorldRect.x), // x
-        cast(int) (verticalScale   * wRect.y + sWorldRect.y), // y
-        cast(int) (horizontalScale * wRect.w),                // width
-        cast(int) (verticalScale   * wRect.h)                 // height
-    );
+        x: cast(int) (horizontalScale * wRect.x + sWorldRect.x),
+        y: cast(int) (verticalScale   * wRect.y + sWorldRect.y),
+        w: cast(int) (horizontalScale * wRect.w),
+        h: cast(int) (verticalScale   * wRect.h)
+    };
+
+    return sRect;
 }
 
