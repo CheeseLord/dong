@@ -5,6 +5,7 @@ import derelict.sdl2.sdl;
 
 // We need to access entities' states to control them.
 import gamestate;
+import entity;
 
 /**
  * Returns true if we should exit, false if we should keep going.

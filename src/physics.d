@@ -2,6 +2,7 @@ import std.stdio;
 
 // We need to access entities' states to move them around in the world.
 import gamestate;
+import entity;
 
 class PhysicsComponent {
     private Entity parent_;
