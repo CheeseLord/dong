@@ -31,24 +31,35 @@ class BallPhysics : PhysicsComponent {
 
     override void update(double elapsedTime)
     {
-        double oldX = parent_.x;
-        double oldY = parent_.y;
+        WorldRect oldWRect = parent_.wRect;
         super.update(elapsedTime);
+
+        // TODO: Make properties for TL, TR, BL, and BR of wRects. Or at least
+        // write functions to compute them?
+        WorldPoint oldTR = {x: oldWRect.x + oldWRect.w,
+                            y: oldWRect.y};
+        WorldPoint oldBR = {x: oldWRect.x + oldWRect.w,
+                            y: oldWRect.y + oldWRect.h};
+
+        WorldPoint newTR = {x: parent_.x + parent_.w,
+                            y: parent_.y};
+        WorldPoint newBR = {x: parent_.x + parent_.w,
+                            y: parent_.y + parent_.h};
 
         bool finishedBouncing = false;
 
         while (!finishedBouncing) {
             foreach (Entity entity; gameState.entities) {
                 if (entity.bounceDir == BounceDirection.LEFT) {
-                    if (SegmentIntersectsVerticalSegment(
-                                WorldPoint(oldX,      oldY),
-                                WorldPoint(parent_.x, parent_.y),
-                                WorldPoint(entity.x,  entity.y),
-                                WorldPoint(entity.x,  entity.y + entity.h)
-                            )) {
+                    WorldPoint entityTL = {x: entity.x,
+                                           y: entity.y};
+                    WorldPoint entityBL = {x: entity.x,
+                                           y: entity.y + entity.h};
+                    if     (SegmentIntersectsVertical(oldTR, newTR,
+                                                      entityTL, entityBL) ||
+                            SegmentIntersectsVertical(oldBR, newBR,
+                                                      entityTL, entityBL)) {
                         debug writefln("    Bouncing.");
-                        // FIXME: Ball jumps a bit when it bounces; this might
-                        // be wrong.
                         // parent_.right = entity.left -
                         //                 abs(parent_.right - entity.left)
                         parent_.x = entity.x -

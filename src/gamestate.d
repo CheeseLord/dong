@@ -120,8 +120,8 @@ void UpdateWorld(Duration elapsedTime)
  * s1End; the other goes from s2Start to s2End. The second one must be
  * perfectly vertical.
  */
-bool SegmentIntersectsVerticalSegment(WorldPoint s1Start, WorldPoint s1End,
-                                      WorldPoint s2Start, WorldPoint s2End)
+bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
+                               WorldPoint s2Start, WorldPoint s2End)
 {
     // s2Start.x and s2End.x are assumed equal.
     double s2x = s2Start.x;
