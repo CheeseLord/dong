@@ -40,15 +40,15 @@ class BallPhysics : PhysicsComponent {
         while (!finishedBouncing) {
             foreach (Entity entity; gameState.entities) {
                 if (entity.bounceDir == BounceDirection.LEFT) {
-                    debug writefln("Checking for bounce.");
                     if (SegmentIntersectsVerticalSegment(
                                 WorldPoint(oldX,      oldY),
                                 WorldPoint(parent_.x, parent_.y),
                                 WorldPoint(entity.x,  entity.y),
-                                WorldPoint(entity.x + entity.w,
-                                           entity.y + entity.h)
+                                WorldPoint(entity.x,  entity.y + entity.h)
                             )) {
                         debug writefln("    Bouncing.");
+                        // FIXME: Ball jumps a bit when it bounces; this might
+                        // be wrong.
                         // parent_.right = entity.left -
                         //                 abs(parent_.right - entity.left)
                         parent_.x = entity.x -

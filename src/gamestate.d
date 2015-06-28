@@ -104,7 +104,7 @@ void UpdateWorld(Duration elapsedTime)
     foreach (Entity entity; gameState.entities) {
         entity.update(elapsedSeconds);
 
-        debug {
+        debug (ShowBallPos) {
             // Quick hack to print the ball's position. I don't like dynamic
             // casts, but I'll put up with this because it's in a debug block
             // anyway.
@@ -138,11 +138,11 @@ bool SegmentIntersectsVerticalSegment(WorldPoint s1Start, WorldPoint s1End,
         //     ------------------------  =  ---------------------
         //             s2x - s1Start.x       s1End.x - s1Start.x
         double intersectY = (s1End.y - s1Start.y) / (s1End.x - s1Start.x) *
-                            (s2x - s2Start.x) +
+                            (s2x - s1Start.x) +
                             s1Start.y;
 
-        return ((s1Start.y < intersectY && intersectY < s1End.y) ||
-                (s1Start.y > intersectY && intersectY > s1End.y));
+        return ((s2Start.y < intersectY && intersectY < s2End.y) ||
+                (s2Start.y > intersectY && intersectY > s2End.y));
     }
 
     return false;
