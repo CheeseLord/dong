@@ -15,6 +15,11 @@ struct WorldRect {
     double y;
     double w;
     double h;
+
+    pure @property const WorldPoint TL() { return WorldPoint(x    , y    ); }
+    pure @property const WorldPoint TR() { return WorldPoint(x + w, y    ); }
+    pure @property const WorldPoint BL() { return WorldPoint(x    , y + h); }
+    pure @property const WorldPoint BR() { return WorldPoint(x + w, y + h); }
 }
 
 struct _GameState {

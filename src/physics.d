@@ -34,27 +34,19 @@ class BallPhysics : PhysicsComponent {
         WorldRect oldWRect = parent_.wRect;
         super.update(elapsedTime);
 
-        // TODO: Make properties for TL, TR, BL, and BR of wRects. Or at least
-        // write functions to compute them?
-        WorldPoint oldTR = {x: oldWRect.x + oldWRect.w,
-                            y: oldWRect.y};
-        WorldPoint oldBR = {x: oldWRect.x + oldWRect.w,
-                            y: oldWRect.y + oldWRect.h};
+        WorldPoint oldTR = oldWRect.TR;
+        WorldPoint oldBR = oldWRect.BR;
 
-        WorldPoint newTR = {x: parent_.x + parent_.w,
-                            y: parent_.y};
-        WorldPoint newBR = {x: parent_.x + parent_.w,
-                            y: parent_.y + parent_.h};
+        WorldPoint newTR = parent_.TR;
+        WorldPoint newBR = parent_.BR;
 
         bool finishedBouncing = false;
 
         while (!finishedBouncing) {
             foreach (Entity entity; gameState.entities) {
                 if (entity.bounceDir == BounceDirection.LEFT) {
-                    WorldPoint entityTL = {x: entity.x,
-                                           y: entity.y};
-                    WorldPoint entityBL = {x: entity.x,
-                                           y: entity.y + entity.h};
+                    WorldPoint entityTL = entity.TL;
+                    WorldPoint entityBL = entity.BL;
                     if     (SegmentIntersectsVertical(oldTR, newTR,
                                                       entityTL, entityBL) ||
                             SegmentIntersectsVertical(oldBR, newBR,

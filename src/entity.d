@@ -57,6 +57,10 @@ class Entity {
     pure @property ref   double                  h() { return wRect_.h;   }
     pure @property ref   double               xVel() { return xVel_;      }
     pure @property ref   double               yVel() { return yVel_;      }
+    pure @property const WorldPoint             TL() { return wRect_.TL;  }
+    pure @property const WorldPoint             TR() { return wRect_.TR;  }
+    pure @property const WorldPoint             BL() { return wRect_.BL;  }
+    pure @property const WorldPoint             BR() { return wRect_.BR;  }
     pure @property const BounceDirection bounceDir() { return bounceDir_; }
 
     protected @property PhysicsComponent physics()
