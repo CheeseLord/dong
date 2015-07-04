@@ -45,6 +45,8 @@ _GameState gameState;
 
 void InitGameState()
 {
+    // TODO: We'll probably want to make the sides of the game area constant
+    // instead of defining them by these sizes.
     const double WALL_WIDTH = 5.0;
     const double PADDLE_WIDTH = 5.0;
     const double PADDLE_HEIGHT = 10.0;
