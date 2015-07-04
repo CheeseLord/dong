@@ -65,8 +65,13 @@ class Entity {
     pure @property ref   double               yVel() { return yVel_;      }
     pure @property const BounceDirection bounceDir() { return bounceDir_; }
 
-    // Pass-through for all the properties of Entity. TODO: Use an alias this
-    // so we don't have to do all these manually.
+    // Pass-through for all the properties of Entity.
+    // It'd be better to replace all of these with
+    //     alias wRect this;
+    // however, currently that breaks downward casts because of dlang Issue
+    // 3537:
+    //     https://issues.dlang.org/show_bug.cgi?id=3537
+    // If that ever gets resolved, we should try the "alias this" solution.
     pure @property ref   double      x() { return wRect_.x; }
     pure @property ref   double      y() { return wRect_.y; }
     pure @property ref   double      w() { return wRect_.w; }
