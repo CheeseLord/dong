@@ -81,7 +81,38 @@ class BallPhysics : PhysicsComponent {
                     }
                 }
 
-                // TODO: More directions
+                else if (entity.bounceDir == BounceDirection.UP) {
+                    WorldPoint entityTL = entity.TL;
+                    WorldPoint entityTR = entity.TR;
+                    if     (SegmentIntersectsHorizontal(oldBL, newBL,
+                                                        entityTL, entityTR) ||
+                            SegmentIntersectsHorizontal(oldBR, newBR,
+                                                        entityTL, entityTR)) {
+                        debug writefln("    Bouncing up.");
+                        // parent_.bottom = entity.top -
+                        //                  abs(parent_.bottom - entity.top)
+                        parent_.y = entity.y -
+                                    abs((parent_.y + parent_.h) - entity.y) -
+                                    parent_.h;
+                        parent_.yVel = - parent_.yVel;
+                    }
+                }
+
+                else if (entity.bounceDir == BounceDirection.DOWN) {
+                    WorldPoint entityBL = entity.BL;
+                    WorldPoint entityBR = entity.BR;
+                    if     (SegmentIntersectsHorizontal(oldTL, newTL,
+                                                        entityBL, entityBR) ||
+                            SegmentIntersectsHorizontal(oldTR, newTR,
+                                                        entityBL, entityBR)) {
+                        debug writefln("    Bouncing down.");
+                        // parent_.top = entity.bottom +
+                        //               abs(entity.bottom - parent_.top)
+                        parent_.y = entity.y + entity.h +
+                                    abs((entity.y + entity.h) - parent_.y);
+                        parent_.yVel = - parent_.yVel;
+                    }
+                }
             }
 
             // TODO: Actually check this
