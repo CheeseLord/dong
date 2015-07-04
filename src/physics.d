@@ -157,10 +157,11 @@ class PaddlePhysics : PhysicsComponent {
         // Stop at walls.
         double minY = (cast(Paddle) parent_).minY;
         double maxY = (cast(Paddle) parent_).maxY;
-        if (parent_.bottom < minY) { parent_.bottom = minY; }
-        if (parent_.top    > maxY) { parent_.top    = maxY; }
-        // TODO: It would be polite to set the velocity to zero, but paddles
-        // can turn instantaneously.
+
+        if (parent_.bottom > maxY) { parent_.bottom = maxY; }
+        if (parent_.top    < minY) { parent_.top    = minY; }
+        // XXX: It would be polite to set the velocity to zero, but paddles
+        // can turn instantaneously, so that's not necessary.
     }
 }
 
