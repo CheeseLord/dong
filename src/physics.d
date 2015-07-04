@@ -149,9 +149,18 @@ class PaddlePhysics : PhysicsComponent {
             if (parent_.xVel < -maxSpeed) { parent_.xVel = -maxSpeed; }
         }
 
+        // FIXME: Remove this.
+        parent_.yVel = maxSpeed;
+
         super.update(elapsedTime);
 
-        // FIXME: Stop at walls.
+        // Stop at walls.
+        double minY = (cast(Paddle) parent_).minY;
+        double maxY = (cast(Paddle) parent_).maxY;
+        if (parent_.bottom < minY) { parent_.bottom = minY; }
+        if (parent_.top    > maxY) { parent_.top    = maxY; }
+        // TODO: It would be polite to set the velocity to zero, but paddles
+        // can turn instantaneously.
     }
 }
 

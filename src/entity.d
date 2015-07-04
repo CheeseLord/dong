@@ -115,12 +115,18 @@ class Wall : Entity {
 class Paddle : Entity {
     private BounceDirection direction_;
     private double maxSpeed_;
+    // TODO: It would be nice to support horizontal paddles too.
+    private double minY_;
+    private double maxY_;
 
-    this(WorldRect wRect, BounceDirection direction, double maxSpeed)
+    this(WorldRect wRect, BounceDirection direction, double maxSpeed,
+         double minY, double maxY)
     {
         super(wRect, 0.0, 0.0, direction);
         direction_ = direction;
         maxSpeed_ = maxSpeed;
+        minY_ = minY;
+        maxY_ = maxY;
     }
 
     override protected void initComponents()
@@ -129,5 +135,7 @@ class Paddle : Entity {
     }
 
     pure @property ref double maxSpeed() { return maxSpeed_; }
+    pure @property ref double minY()     { return minY_;     }
+    pure @property ref double maxY()     { return maxY_;     }
 }
 

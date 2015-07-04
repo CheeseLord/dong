@@ -49,26 +49,18 @@ void InitGameState()
     const double PADDLE_WIDTH = 5.0;
     const double PADDLE_HEIGHT = 10.0;
 
-    // Left wall
-    gameState.entities ~= new Wall(
+    // Left paddle
+    gameState.entities ~= new Paddle(
         WorldRect(
-            0,
-            0,
-            WALL_WIDTH,
-            gameState.worldHeight
+            PADDLE_WIDTH,
+            gameState.worldHeight / 2 - PADDLE_HEIGHT / 2,
+            PADDLE_WIDTH,
+            PADDLE_HEIGHT,
         ),
-        BounceDirection.RIGHT
-    );
-
-    // Top wall
-    gameState.entities ~= new Wall(
-        WorldRect(
-            0,
-            0,
-            gameState.worldWidth,
-            WALL_WIDTH
-        ),
-        BounceDirection.DOWN
+        BounceDirection.RIGHT,
+        PADDLE_HEIGHT,
+        WALL_WIDTH,
+        gameState.worldHeight - WALL_WIDTH,
     );
 
     // Right paddle
@@ -80,7 +72,20 @@ void InitGameState()
             PADDLE_HEIGHT,
         ),
         BounceDirection.LEFT,
-        10,
+        PADDLE_HEIGHT,
+        WALL_WIDTH,
+        gameState.worldHeight - WALL_WIDTH,
+    );
+
+    // Top wall
+    gameState.entities ~= new Wall(
+        WorldRect(
+            0,
+            0,
+            gameState.worldWidth,
+            WALL_WIDTH
+        ),
+        BounceDirection.DOWN
     );
 
     // Bottom wall
