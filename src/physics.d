@@ -56,11 +56,11 @@ class BallPhysics : PhysicsComponent {
                             SegmentIntersectsVertical(oldBR, newBR,
                                                       entityTL, entityBL)) {
                         debug writefln("    Bouncing left.");
-                        // parent_.right = entity.left -
-                        //                 abs(parent_.right - entity.left)
-                        parent_.x = entity.x -
-                                    abs((parent_.x + parent_.w) - entity.x) -
-                                    parent_.w;
+                        parent_.right = entity.left -
+                                        abs(parent_.right - entity.left);
+                        // parent_.x = entity.x -
+                        //             abs((parent_.x + parent_.w) - entity.x) -
+                        //             parent_.w;
                         parent_.xVel = - parent_.xVel;
                     }
                 }
@@ -73,10 +73,10 @@ class BallPhysics : PhysicsComponent {
                             SegmentIntersectsVertical(oldBL, newBL,
                                                       entityTR, entityBR)) {
                         debug writefln("    Bouncing right.");
-                        // parent_.left = entity.right +
-                        //                 abs(entity.right - parent_.left)
-                        parent_.x = entity.x + entity.w +
-                                    abs((entity.x + entity.w) - parent_.x);
+                        parent_.left = entity.right +
+                                        abs(entity.right - parent_.left);
+                        // parent_.x = entity.x + entity.w +
+                        //             abs((entity.x + entity.w) - parent_.x);
                         parent_.xVel = - parent_.xVel;
                     }
                 }
@@ -89,11 +89,11 @@ class BallPhysics : PhysicsComponent {
                             SegmentIntersectsHorizontal(oldBR, newBR,
                                                         entityTL, entityTR)) {
                         debug writefln("    Bouncing up.");
-                        // parent_.bottom = entity.top -
-                        //                  abs(parent_.bottom - entity.top)
-                        parent_.y = entity.y -
-                                    abs((parent_.y + parent_.h) - entity.y) -
-                                    parent_.h;
+                        parent_.bottom = entity.top -
+                                         abs(parent_.bottom - entity.top);
+                        // parent_.y = entity.y -
+                        //             abs((parent_.y + parent_.h) - entity.y) -
+                        //             parent_.h;
                         parent_.yVel = - parent_.yVel;
                     }
                 }
@@ -106,10 +106,10 @@ class BallPhysics : PhysicsComponent {
                             SegmentIntersectsHorizontal(oldTR, newTR,
                                                         entityBL, entityBR)) {
                         debug writefln("    Bouncing down.");
-                        // parent_.top = entity.bottom +
-                        //               abs(entity.bottom - parent_.top)
-                        parent_.y = entity.y + entity.h +
-                                    abs((entity.y + entity.h) - parent_.y);
+                        parent_.top = entity.bottom +
+                                      abs(entity.bottom - parent_.top);
+                        // parent_.y = entity.y + entity.h +
+                        //             abs((entity.y + entity.h) - parent_.y);
                         parent_.yVel = - parent_.yVel;
                     }
                 }

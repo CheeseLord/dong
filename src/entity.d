@@ -48,21 +48,6 @@ class Entity {
         // Nothing to do here; they'll be initialized lazily.
     }
 
-    // Accessors and mutators for all of our members.
-    // Because encapsulation? What's that?
-    pure @property ref   WorldRect           wRect() { return wRect_;     }
-    pure @property ref   double                  x() { return wRect_.x;   }
-    pure @property ref   double                  y() { return wRect_.y;   }
-    pure @property ref   double                  w() { return wRect_.w;   }
-    pure @property ref   double                  h() { return wRect_.h;   }
-    pure @property ref   double               xVel() { return xVel_;      }
-    pure @property ref   double               yVel() { return yVel_;      }
-    pure @property const WorldPoint             TL() { return wRect_.TL;  }
-    pure @property const WorldPoint             TR() { return wRect_.TR;  }
-    pure @property const WorldPoint             BL() { return wRect_.BL;  }
-    pure @property const WorldPoint             BR() { return wRect_.BR;  }
-    pure @property const BounceDirection bounceDir() { return bounceDir_; }
-
     protected @property PhysicsComponent physics()
     {
         // Lazily initialize a default PhysicsComponent if the subclass didn't
@@ -72,6 +57,35 @@ class Entity {
         }
         return physics_;
     }
+
+    // Accessors and mutators for all of our members.
+    // Because encapsulation? What's that?
+    pure @property ref   WorldRect           wRect() { return wRect_;     }
+    pure @property ref   double               xVel() { return xVel_;      }
+    pure @property ref   double               yVel() { return yVel_;      }
+    pure @property const BounceDirection bounceDir() { return bounceDir_; }
+
+    // Pass-through for all the properties of Entity. TODO: Use an alias this
+    // so we don't have to do all these manually.
+    pure @property ref   double      x() { return wRect_.x; }
+    pure @property ref   double      y() { return wRect_.y; }
+    pure @property ref   double      w() { return wRect_.w; }
+    pure @property ref   double      h() { return wRect_.h; }
+
+    pure @property const double   left() { return wRect_.left  ; }
+    pure @property const double    top() { return wRect_.top   ; }
+    pure @property const double  right() { return wRect_.right ; }
+    pure @property const double bottom() { return wRect_.bottom; }
+
+    @property void     left(double newL) { wRect_.left   = newL; }
+    @property void      top(double newT) { wRect_.top    = newT; }
+    @property void    right(double newR) { wRect_.right  = newR; }
+    @property void   bottom(double newB) { wRect_.bottom = newB; }
+
+    pure @property const WorldPoint TL() { return wRect_.TL; }
+    pure @property const WorldPoint TR() { return wRect_.TR; }
+    pure @property const WorldPoint BL() { return wRect_.BL; }
+    pure @property const WorldPoint BR() { return wRect_.BR; }
 }
 
 class Ball : Entity {

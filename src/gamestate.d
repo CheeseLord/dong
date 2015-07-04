@@ -16,6 +16,16 @@ struct WorldRect {
     double w;
     double h;
 
+    pure @property const double   left() { return x    ; }
+    pure @property const double    top() { return y    ; }
+    pure @property const double  right() { return x + w; }
+    pure @property const double bottom() { return y + h; }
+
+    @property void   left(double newL) { x = newL    ; }
+    @property void    top(double newT) { y = newT    ; }
+    @property void  right(double newR) { x = newR - w; }
+    @property void bottom(double newB) { y = newB - h; }
+
     pure @property const WorldPoint TL() { return WorldPoint(x    , y    ); }
     pure @property const WorldPoint TR() { return WorldPoint(x + w, y    ); }
     pure @property const WorldPoint BL() { return WorldPoint(x    , y + h); }
