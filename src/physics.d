@@ -22,7 +22,7 @@ class PhysicsComponent {
 }
 
 class BallPhysics : PhysicsComponent {
-    this(Entity parent)
+    this(Ball parent)
     {
         super(parent);
 
@@ -118,6 +118,40 @@ class BallPhysics : PhysicsComponent {
             // TODO: Actually check this
             finishedBouncing = true;
         }
+    }
+}
+
+class PaddlePhysics : PhysicsComponent {
+    this(Paddle parent)
+    {
+        super(parent);
+
+        debug writefln("Constructing a Paddle's PhysicsComponent.");
+    }
+
+    override void update(double elapsedTime)
+    {
+        double maxSpeed = (cast(Paddle) parent_).maxSpeed;
+
+        // Make sure the paddle's velocity is sensible.
+        if (parent_.bounceDir == BounceDirection.LEFT ||
+            parent_.bounceDir == BounceDirection.RIGHT)
+        {
+            parent_.xVel = 0;
+            if (parent_.yVel > maxSpeed)  { parent_.yVel = maxSpeed;  }
+            if (parent_.yVel < -maxSpeed) { parent_.yVel = -maxSpeed; }
+        }
+        else if (parent_.bounceDir == BounceDirection.LEFT ||
+                 parent_.bounceDir == BounceDirection.RIGHT)
+        {
+            parent_.yVel = 0;
+            if (parent_.xVel > maxSpeed)  { parent_.xVel = maxSpeed;  }
+            if (parent_.xVel < -maxSpeed) { parent_.xVel = -maxSpeed; }
+        }
+
+        super.update(elapsedTime);
+
+        // FIXME: Stop at walls.
     }
 }
 

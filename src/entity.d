@@ -98,3 +98,22 @@ class Wall : Entity {
     // Use default PhysicsComponent.
 }
 
+class Paddle : Entity {
+    private BounceDirection direction_;
+    private double maxSpeed_;
+
+    this(WorldRect wRect, BounceDirection direction, double maxSpeed)
+    {
+        super(wRect, 0.0, 0.0, direction);
+        direction_ = direction;
+        maxSpeed_ = maxSpeed;
+    }
+
+    override protected void initComponents()
+    {
+        physics_ = new PaddlePhysics(this);
+    }
+
+    pure @property ref double maxSpeed() { return maxSpeed_; }
+}
+
