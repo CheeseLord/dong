@@ -35,10 +35,14 @@ class BallPhysics : PhysicsComponent {
         super.update(elapsedTime);
 
         WorldPoint oldTR = oldWRect.TR;
+        WorldPoint oldTL = oldWRect.TL;
         WorldPoint oldBR = oldWRect.BR;
+        WorldPoint oldBL = oldWRect.BL;
 
         WorldPoint newTR = parent_.TR;
+        WorldPoint newTL = parent_.TL;
         WorldPoint newBR = parent_.BR;
+        WorldPoint newBL = parent_.BL;
 
         bool finishedBouncing = false;
 
@@ -51,12 +55,28 @@ class BallPhysics : PhysicsComponent {
                                                       entityTL, entityBL) ||
                             SegmentIntersectsVertical(oldBR, newBR,
                                                       entityTL, entityBL)) {
-                        debug writefln("    Bouncing.");
+                        debug writefln("    Bouncing left.");
                         // parent_.right = entity.left -
                         //                 abs(parent_.right - entity.left)
                         parent_.x = entity.x -
                                     abs((parent_.x + parent_.w) - entity.x) -
                                     parent_.w;
+                        parent_.xVel = - parent_.xVel;
+                    }
+                }
+
+                else if (entity.bounceDir == BounceDirection.RIGHT) {
+                    WorldPoint entityTR = entity.TR;
+                    WorldPoint entityBR = entity.BR;
+                    if     (SegmentIntersectsVertical(oldTL, newTL,
+                                                      entityTR, entityBR) ||
+                            SegmentIntersectsVertical(oldBL, newBL,
+                                                      entityTR, entityBR)) {
+                        debug writefln("    Bouncing right.");
+                        // parent_.left = entity.right +
+                        //                 abs(entity.right - parent_.left)
+                        parent_.x = entity.x + entity.w +
+                                    abs((entity.x + entity.w) - parent_.x);
                         parent_.xVel = - parent_.xVel;
                     }
                 }
