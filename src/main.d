@@ -26,7 +26,7 @@ void main()
     Duration frameLength = dur!"seconds"(1) / frameRate;
 
     // Run the main game loop.
-    MAIN_LOOP: while (true)
+    while (true)
     {
         // Get the time at which this iteration of the event loop begins.
         MonoTime currStartTime = MonoTime.currTime;
