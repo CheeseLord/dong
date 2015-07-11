@@ -13,7 +13,7 @@ class PhysicsComponent {
         parent_ = parent;
     }
 
-    void update(double elapsedTime)
+    void Update(double elapsedTime)
     {
         // Update position based on current velocity and elapsed time.
         parent_.x += parent_.xVel * elapsedTime;
@@ -29,10 +29,10 @@ class BallPhysics : PhysicsComponent {
         debug writefln("Constructing the Ball's PhysicsComponent.");
     }
 
-    override void update(double elapsedTime)
+    override void Update(double elapsedTime)
     {
         WorldRect oldWRect = parent_.wRect;
-        super.update(elapsedTime);
+        super.Update(elapsedTime);
 
         WorldPoint oldTR = oldWRect.TR;
         WorldPoint oldTL = oldWRect.TL;
@@ -129,7 +129,7 @@ class PaddlePhysics : PhysicsComponent {
         debug writefln("Constructing a Paddle's PhysicsComponent.");
     }
 
-    override void update(double elapsedTime)
+    override void Update(double elapsedTime)
     {
         double maxSpeed = (cast(Paddle) parent_).maxSpeed;
 
@@ -149,10 +149,7 @@ class PaddlePhysics : PhysicsComponent {
             if (parent_.xVel < -maxSpeed) { parent_.xVel = -maxSpeed; }
         }
 
-        // FIXME: Remove this.
-        parent_.yVel = maxSpeed;
-
-        super.update(elapsedTime);
+        super.Update(elapsedTime);
 
         // Stop at walls.
         double minY = (cast(Paddle) parent_).minY;

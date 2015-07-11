@@ -127,7 +127,7 @@ void UpdateWorld(Duration elapsedTime)
 
     // FIXME: Actually loop over a list.
     foreach (Entity entity; gameState.entities) {
-        entity.update(elapsedSeconds);
+        entity.Update(elapsedSeconds);
 
         debug (ShowBallPos) {
             // Quick hack to print the ball's position. I don't like dynamic

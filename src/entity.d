@@ -27,7 +27,7 @@ class Entity {
         yVel_      = startYVel;
         bounceDir_ = bounceDir;
 
-        initComponents();
+        InitComponents();
     }
 
     this(double x, double y, double w, double h,
@@ -37,13 +37,13 @@ class Entity {
         this(WorldRect(x, y, w, h), startXVel, startYVel, bounceDir);
     }
 
-    void update(double elapsedTime)
+    void Update(double elapsedTime)
     {
         // FIXME: Actually do things.
-        physics.update(elapsedTime);
+        physics.Update(elapsedTime);
     }
 
-    protected void initComponents()
+    protected void InitComponents()
     {
         // Nothing to do here; they'll be initialized lazily.
     }
@@ -99,7 +99,7 @@ class Ball : Entity {
         super(startWRect, startXVel, startYVel);
     }
 
-    override protected void initComponents()
+    override protected void InitComponents()
     {
         physics_ = new BallPhysics(this);
     }
@@ -134,7 +134,7 @@ class Paddle : Entity {
         maxY_ = maxY;
     }
 
-    override protected void initComponents()
+    override protected void InitComponents()
     {
         physics_ = new PaddlePhysics(this);
     }
