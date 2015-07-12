@@ -5,6 +5,10 @@ import physics;
 import graphics;
 import gamestate;
 
+// TODO: This feels too tightly coupled.
+// For event handling.
+import derelict.sdl2.sdl;
+
 // For entities that other entities bounce off of, describes the direction
 // which those other entities are reflected toward. For all other entities,
 // should be set to NO_BOUNCE.
@@ -17,6 +21,7 @@ class Entity {
     private BounceDirection bounceDir_;
 
     // FIXME: Add more components.
+    protected ControlComponent control_;
     protected PhysicsComponent physics_;
 
     this(WorldRect startWRect, double startXVel = 0.0, double startYVel = 0.0,
@@ -37,10 +42,17 @@ class Entity {
         this(WorldRect(x, y, w, h), startXVel, startYVel, bounceDir);
     }
 
+    void HandleEvent(SDL_Event event)
+    {
+        // Only the control needs to care about the event.
+        control.HandleEvent(event);
+    }
+
     void Update(double elapsedTime)
     {
         // FIXME: Actually do things.
         physics.Update(elapsedTime);
+        control.Update(elapsedTime);
     }
 
     protected void InitComponents()
@@ -56,6 +68,16 @@ class Entity {
             physics_ = new PhysicsComponent(this);
         }
         return physics_;
+    }
+
+    protected @property ControlComponent control()
+    {
+        // Lazily initialize a default ControlComponent if the subclass didn't
+        // create its own.
+        if (control_ is null) {
+            control_ = new ControlComponent(this);
+        }
+        return control_;
     }
 
     // Accessors and mutators for all of our members.
@@ -137,6 +159,8 @@ class Paddle : Entity {
     override protected void InitComponents()
     {
         physics_ = new PaddlePhysics(this);
+        // FIXME: The control needs to be passed in somehow.
+        control_ = new KeyControlComponent(this);
     }
 
     pure @property ref double maxSpeed() { return maxSpeed_; }
