@@ -49,75 +49,73 @@ class BallPhysics : PhysicsComponent {
         while (!finishedBouncing) {
             foreach (Entity entity; gameState.entities) {
                 if (entity.bounceDir == BounceDirection.LEFT) {
-                    WorldPoint entityTL = entity.TL;
-                    WorldPoint entityBL = entity.BL;
-                    if     (SegmentIntersectsVertical(oldTR, newTR,
-                                                      entityTL, entityBL) ||
-                            SegmentIntersectsVertical(oldBR, newBR,
-                                                      entityTL, entityBL)) {
-                        debug writefln("    Bouncing left.");
-                        parent_.right = entity.left -
-                                        abs(parent_.right - entity.left);
-                        // parent_.x = entity.x -
-                        //             abs((parent_.x + parent_.w) - entity.x) -
-                        //             parent_.w;
-                        parent_.xVel = - parent_.xVel;
-                    }
+                    MaybeBounce!("right",  "left",   false, true,  "left")
+                                (parent_, entity, oldWRect);
                 }
-
                 else if (entity.bounceDir == BounceDirection.RIGHT) {
-                    WorldPoint entityTR = entity.TR;
-                    WorldPoint entityBR = entity.BR;
-                    if     (SegmentIntersectsVertical(oldTL, newTL,
-                                                      entityTR, entityBR) ||
-                            SegmentIntersectsVertical(oldBL, newBL,
-                                                      entityTR, entityBR)) {
-                        debug writefln("    Bouncing right.");
-                        parent_.left = entity.right +
-                                        abs(entity.right - parent_.left);
-                        // parent_.x = entity.x + entity.w +
-                        //             abs((entity.x + entity.w) - parent_.x);
-                        parent_.xVel = - parent_.xVel;
-                    }
+                    MaybeBounce!("left",   "right",  false, false, "right")
+                                (parent_, entity, oldWRect);
                 }
-
                 else if (entity.bounceDir == BounceDirection.UP) {
-                    WorldPoint entityTL = entity.TL;
-                    WorldPoint entityTR = entity.TR;
-                    if     (SegmentIntersectsHorizontal(oldBL, newBL,
-                                                        entityTL, entityTR) ||
-                            SegmentIntersectsHorizontal(oldBR, newBR,
-                                                        entityTL, entityTR)) {
-                        debug writefln("    Bouncing up.");
-                        parent_.bottom = entity.top -
-                                         abs(parent_.bottom - entity.top);
-                        // parent_.y = entity.y -
-                        //             abs((parent_.y + parent_.h) - entity.y) -
-                        //             parent_.h;
-                        parent_.yVel = - parent_.yVel;
-                    }
+                    MaybeBounce!("bottom", "top",    true,  true,  "up")
+                                (parent_, entity, oldWRect);
                 }
-
                 else if (entity.bounceDir == BounceDirection.DOWN) {
-                    WorldPoint entityBL = entity.BL;
-                    WorldPoint entityBR = entity.BR;
-                    if     (SegmentIntersectsHorizontal(oldTL, newTL,
-                                                        entityBL, entityBR) ||
-                            SegmentIntersectsHorizontal(oldTR, newTR,
-                                                        entityBL, entityBR)) {
-                        debug writefln("    Bouncing down.");
-                        parent_.top = entity.bottom +
-                                      abs(entity.bottom - parent_.top);
-                        // parent_.y = entity.y + entity.h +
-                        //             abs((entity.y + entity.h) - parent_.y);
-                        parent_.yVel = - parent_.yVel;
-                    }
+                    MaybeBounce!("top",    "bottom", true,  false, "down")
+                                (parent_, entity, oldWRect);
                 }
             }
 
             // TODO: Actually check this
             finishedBouncing = true;
         }
+    }
+}
+
+bool MaybeBounce(string myEdgeName, string wallEdgeName, bool isVertical,
+                 bool isNegative, string directionName)
+                (Entity me, Entity wall, WorldRect myOldRect)
+{
+    enum string myEdge   = "me."   ~ myEdgeName;
+    enum string wallEdge = "wall." ~ wallEdgeName;
+
+    enum string myNewCorner1 = "me."        ~ GetEdgeCorners!myEdgeName  .corner1;
+    enum string myNewCorner2 = "me."        ~ GetEdgeCorners!myEdgeName  .corner2;
+    enum string myOldCorner1 = "myOldRect." ~ GetEdgeCorners!myEdgeName  .corner1;
+    enum string myOldCorner2 = "myOldRect." ~ GetEdgeCorners!myEdgeName  .corner2;
+    enum string wallCorner1  = "wall."      ~ GetEdgeCorners!wallEdgeName.corner1;
+    enum string wallCorner2  = "wall."      ~ GetEdgeCorners!wallEdgeName.corner2;
+
+    // TODO: Explain reversal of Intersects.
+    static if (isVertical) {
+        alias Intersects = SegmentIntersectsHorizontal;
+    }
+    else {
+        alias Intersects = SegmentIntersectsVertical;
+    }
+
+    if (    Intersects(mixin(myOldCorner1), mixin(myNewCorner1), mixin(wallCorner1), mixin(wallCorner2)) ||
+            Intersects(mixin(myOldCorner2), mixin(myNewCorner2), mixin(wallCorner1), mixin(wallCorner2))) {
+        debug writefln("    Bouncing %s.", directionName);
+
+        static if (isNegative) {
+            mixin(myEdge) = mixin(wallEdge) - abs(mixin(myEdge)   - mixin(wallEdge));
+        }
+        else {
+            mixin(myEdge) = mixin(wallEdge) + abs(mixin(wallEdge) - mixin(myEdge));
+        }
+
+        static if (isVertical) {
+            me.yVel = - me.yVel;
+        }
+        else {
+            me.xVel = - me.xVel;
+        }
+
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
