@@ -7,8 +7,6 @@ import derelict.sdl2.sdl;
 import gamestate;
 import entity;
 
-enum MoveDirection {NO_MOVE, LEFT, UP, RIGHT, DOWN}
-
 /**
  * Returns true if we should exit, false if we should keep going.
  */
@@ -74,7 +72,7 @@ class ControlComponent {
 class KeyControlComponent : ControlComponent {
     // TODO: Support left and right.
     private SDL_Scancode upKey_, downKey_;
-    private MoveDirection currDirection_;
+    private bool movingUp_, movingDown_;
 
     this(Entity parent)
     {
@@ -86,37 +84,49 @@ class KeyControlComponent : ControlComponent {
         super(parent);
         upKey_ = upKey;
         downKey_ = downKey;
-        currDirection_ = MoveDirection.NO_MOVE;
+        movingUp_ = false;
+        movingDown_ = false;
         debug writefln("Constructing a KeyControlComponent.");
     }
 
     override void HandleEvent(SDL_Event event)
     {
-        if (event.key.keysym.scancode == upKey_) {
-            debug writefln("Moving up.");
-            currDirection_ = MoveDirection.UP;
+        if (event.key.type == SDL_KEYDOWN) {
+            if (event.key.keysym.scancode == upKey_) {
+                debug writefln("Moving up.");
+                movingUp_ = true;
+            }
+            if (event.key.keysym.scancode == downKey_) {
+                debug writefln("Moving down.");
+                movingDown_ = true;
+            }
         }
-        if (event.key.keysym.scancode == downKey_) {
-            debug writefln("Moving down.");
-            currDirection_ = MoveDirection.DOWN;
+        if (event.key.type == SDL_KEYUP) {
+            if (event.key.keysym.scancode == upKey_) {
+                debug writefln("No longer moving up.");
+                movingUp_ = false;
+            }
+            if (event.key.keysym.scancode == downKey_) {
+                debug writefln("No longer moving down.");
+                movingDown_ = false;
+            }
         }
     }
 
     override void Update(double elapsedTime)
     {
-        if (currDirection_ == MoveDirection.NO_MOVE) {
+        if (!(movingUp_ || movingDown_)) {
             parent_.yVel = 0;
         }
-        else if (currDirection_ == MoveDirection.UP) {
+        else if (movingUp_) {
             parent_.yVel = -float.infinity;
         }
-        else if (currDirection_ == MoveDirection.DOWN) {
+        else if (movingDown_) {
             parent_.yVel = float.infinity;
         }
         else {
             // TODO: Support horizontal paddles.
         }
-        currDirection_ = MoveDirection.NO_MOVE;
     }
 }
 
