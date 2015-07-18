@@ -2,6 +2,8 @@ import std.stdio;
 import core.time;
 
 import entity;
+// TODO: We really want the controllers set in a user menu, not here.
+import controller;
 
 // I suppose we could use this in the WorldRect struct, but I don't really want
 // to add more indirection there.
@@ -66,7 +68,7 @@ void InitGameState()
     const double PADDLE_MAX_SPEED = 30.0;
 
     // Left paddle
-    gameState.entities ~= new Paddle(
+    Paddle leftPaddle = new Paddle(
         WorldRect(
             PADDLE_WIDTH,
             gameState.worldHeight / 2 - PADDLE_HEIGHT / 2,
@@ -78,6 +80,8 @@ void InitGameState()
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
+    leftPaddle.SetControl(new KeyControlComponent(leftPaddle));
+    gameState.entities ~= leftPaddle;
 
     // Right paddle
     gameState.entities ~= new Paddle(
