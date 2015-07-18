@@ -115,7 +115,7 @@ class KeyControlComponent : ControlComponent {
 
     override void Update(double elapsedTime)
     {
-        if (!(movingUp_ || movingDown_)) {
+        if (movingUp_ == movingDown_) {
             parent_.yVel = 0;
         }
         else if (movingUp_) {
