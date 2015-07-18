@@ -34,16 +34,6 @@ class BallPhysics : PhysicsComponent {
         WorldRect oldWRect = parent_.wRect;
         super.Update(elapsedTime);
 
-        WorldPoint oldTR = oldWRect.TR;
-        WorldPoint oldTL = oldWRect.TL;
-        WorldPoint oldBR = oldWRect.BR;
-        WorldPoint oldBL = oldWRect.BL;
-
-        WorldPoint newTR = parent_.TR;
-        WorldPoint newTL = parent_.TL;
-        WorldPoint newBR = parent_.BR;
-        WorldPoint newBL = parent_.BL;
-
         bool finishedBouncing = false;
 
         while (!finishedBouncing) {
