@@ -13,6 +13,8 @@ alias ScreenRect = SDL_Rect;
 private SDL_Window  *window  = null;
 private SDL_Surface *surface = null;
 
+private ScreenRect sWorldRect;
+
 void InitGraphics()
 {
     // Set up SDL.
@@ -37,6 +39,14 @@ void InitGraphics()
     // Create a surface and paint it black.
     surface = SDL_GetWindowSurface(window);
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
+
+    // FIXME: This will eventually be not the entire screen.
+    sWorldRect = ScreenRect(
+        cast(int) 0,         // x
+        cast(int) 0,         // y
+        cast(int) surface.w, // w
+        cast(int) surface.h  // h
+    );
 }
 
 void CleanupGraphics()
@@ -51,14 +61,6 @@ void CleanupGraphics()
 
 void RenderGame()
 {
-    // FIXME: This will eventually be not the entire screen.
-    ScreenRect sWorldRect = {
-        x: cast(int) 0,
-        y: cast(int) 0,
-        w: cast(int) surface.w,
-        h: cast(int) surface.h
-    };
-
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0,   0));
 
     foreach (Entity entity; gameState.entities) {
