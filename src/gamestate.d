@@ -2,9 +2,11 @@ import std.stdio;
 import core.time;
 
 import entity;
+import worldgeometry;
 // TODO: We really want the controllers set in a user menu, not here.
 import control;
-import worldgeometry;
+import derelict.sdl2.sdl;
+
 
 struct _GameState {
     // Screen-independent size.
@@ -39,11 +41,13 @@ void InitGameState()
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
-    leftPaddle.SetControl(new KeyControlComponent(leftPaddle));
+    leftPaddle.SetControl(new KeyControlComponent(leftPaddle,
+                                                  SDL_SCANCODE_W,
+                                                  SDL_SCANCODE_S));
     gameState.entities ~= leftPaddle;
 
     // Right paddle
-    gameState.entities ~= new Paddle(
+    Paddle rightPaddle = new Paddle(
         WorldRect(
             gameState.worldWidth - 2 * PADDLE_WIDTH,
             gameState.worldHeight / 2 - PADDLE_HEIGHT / 2,
@@ -55,6 +59,8 @@ void InitGameState()
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
+    rightPaddle.SetControl(new KeyControlComponent(rightPaddle));
+    gameState.entities ~= rightPaddle;
 
     // Top wall
     gameState.entities ~= new Wall(
