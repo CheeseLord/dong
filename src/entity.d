@@ -159,8 +159,11 @@ class Paddle : Entity {
     override protected void InitComponents()
     {
         physics_ = new PaddlePhysics(this);
-        // FIXME: The control needs to be passed in somehow.
-        control_ = new KeyControlComponent(this);
+    }
+
+    public void SetControl(ControlComponent control)
+    {
+        control_ = control;
     }
 
     pure @property ref double maxSpeed() { return maxSpeed_; }
