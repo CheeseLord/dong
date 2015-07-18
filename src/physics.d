@@ -36,6 +36,10 @@ class BallPhysics : PhysicsComponent {
 
         bool finishedBouncing = false;
 
+        // NOTE: I'm not totally certain this won't be an infinite loop. I
+        // can't think of a way that could happen since all of our walls are
+        // axis-aligned (either perfectly vertical or perfectly horizontal),
+        // but I also can't prove that it won't happen.
         while (!finishedBouncing) {
             finishedBouncing = true;
 
@@ -103,7 +107,7 @@ class BallPhysics : PhysicsComponent {
  */
 bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
                  bool isNegative)
-                (Entity me, Entity wall, WorldRect myOldRect)
+                (Entity me, Entity wall, ref WorldRect myOldRect)
 {
     // TODO: I couldn't figure out a way to create compile-time aliases to
     // these (short of taking their addresses and storing them in pointers), so
@@ -137,11 +141,17 @@ bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
         alias Intersects = SegmentIntersectsVertical;
     }
 
-    // Check whether our displacement vector passes through the wall.
-    if (    Intersects(mixin(myOldCorner1), mixin(myNewCorner1),
-                       mixin(wallCorner1),  mixin(wallCorner2)) ||
+    double deltaX = 0.0;
+    double deltaY = 0.0;
+
+    // Check whether our displacement vector passes through the wall, setting
+    // deltaX and deltaY if so.
+    if     (Intersects(mixin(myOldCorner1), mixin(myNewCorner1),
+                       mixin(wallCorner1),  mixin(wallCorner2),
+                       deltaX, deltaY) ||
             Intersects(mixin(myOldCorner2), mixin(myNewCorner2),
-                       mixin(wallCorner1), mixin(wallCorner2))) {
+                       mixin(wallCorner1),  mixin(wallCorner2),
+                       deltaX, deltaY)) {
 
         // Use abs() to make sure we bounce in the right direction. If
         // isNegative, then our final edge coordinate should be less than the
@@ -157,10 +167,11 @@ bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
                 abs(mixin(wallEdgeCoord) - mixin(myEdgeCoord)  );
         }
 
-        // FIXME: Also need to update myOldRect (which we currently can't do
-        // because it's passed by value) to our position just after the bounce,
-        // so that we can detect any further collisions (in case there are many
-        // collisions in a single frame).
+        // Also update myOldRect to be at the point of intersection, allowing
+        // us to detect additional bounces that happened during this same
+        // frame.
+        myOldRect.x += deltaX;
+        myOldRect.y += deltaY;
 
         // Actually start moving in the other direction.
         mixin(myVel) = - mixin(myVel);
@@ -170,6 +181,88 @@ bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
     else {
         return false;
     }
+}
+
+/**
+ * Check whether two line segments intersect. One segment goes from s1Start to
+ * s1End; the other goes from s2Start to s2End. The second one must be
+ * perfectly vertical. If they do intersect, set deltaX and deltaY to the
+ * offset (x, y) from s1Start to the point of intersection. If they don't
+ * intersect, leave deltaX and deltaY unchanged.
+ */
+private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
+                                       WorldPoint s2Start, WorldPoint s2End,
+                                       ref double deltaX,  ref double deltaY)
+{
+    // s2Start.x and s2End.x are assumed equal.
+    double s2x = s2Start.x;
+
+    if     ((s1Start.x < s2x && s1End.x > s2x) ||
+            (s1Start.x > s2x && s1End.x < s2x)) {
+        // Segment 1 starts and ends on opposite sides (horizontally speaking)
+        // of segment 2, so an intersection is possible.
+
+        // Compute the y-coordinate of segment 1 at s2x. If the two segments
+        // intersect, it must be at this y-coordinate, so we call it
+        // intersectY. To find this coordinate, we make use of the fact that:
+        //      intersectY - s1Start.y       s1End.y - s1Start.y
+        //     ------------------------  =  ---------------------
+        //             s2x - s1Start.x       s1End.x - s1Start.x
+        double intersectY = (s1End.y - s1Start.y) / (s1End.x - s1Start.x) *
+                            (s2x - s1Start.x) +
+                            s1Start.y;
+
+        if     ((s2Start.y < intersectY && intersectY < s2End.y) ||
+                (s2Start.y > intersectY && intersectY > s2End.y)) {
+            // The segments intersect.
+            deltaX = s2x        - s1Start.x;
+            deltaY = intersectY - s1Start.y;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Check whether two line segments intersect. One segment goes from s1Start to
+ * s1End; the other goes from s2Start to s2End. The second one must be
+ * perfectly horizontal. If they do intersect, set deltaX and deltaY to the
+ * offset (x, y) from s1Start to the point of intersection. If they don't
+ * intersect, leave deltaX and deltaY unchanged.
+ */
+private bool SegmentIntersectsHorizontal(WorldPoint s1Start, WorldPoint s1End,
+                                         WorldPoint s2Start, WorldPoint s2End,
+                                         ref double deltaX,  ref double deltaY)
+{
+    // s2Start.y and s2End.y are assumed equal.
+    double s2y = s2Start.y;
+
+    if     ((s1Start.y < s2y && s1End.y > s2y) ||
+            (s1Start.y > s2y && s1End.y < s2y)) {
+        // Segment 1 starts and ends on opposite sides (vertically speaking)
+        // of segment 2, so an intersection is possible.
+
+        // Compute the x-coordinate of segment 1 at s2y. If the two segments
+        // intersect, it must be at this x-coordinate, so we call it
+        // intersectX. To find this coordinate, we make use of the fact that:
+        //      intersectX - s1Start.x       s1End.x - s1Start.x
+        //     ------------------------  =  ---------------------
+        //             s2y - s1Start.y       s1End.y - s1Start.y
+        double intersectX = (s1End.x - s1Start.x) / (s1End.y - s1Start.y) *
+                            (s2y - s1Start.y) +
+                            s1Start.x;
+
+        if     ((s2Start.x < intersectX && intersectX < s2End.x) ||
+                (s2Start.x > intersectX && intersectX > s2End.x)) {
+            // The segments intersect.
+            deltaX = intersectX - s1Start.x;
+            deltaY = s2y        - s1Start.y;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 class PaddlePhysics : PhysicsComponent {
