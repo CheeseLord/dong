@@ -3,7 +3,7 @@ import core.time;
 
 import entity;
 // TODO: We really want the controllers set in a user menu, not here.
-import controller;
+import control;
 
 // I suppose we could use this in the WorldRect struct, but I don't really want
 // to add more indirection there.

@@ -1,6 +1,6 @@
 import std.stdio;
 
-import controller;
+import control;
 import physics;
 import graphics;
 import gamestate;

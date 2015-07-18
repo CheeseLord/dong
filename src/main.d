@@ -7,7 +7,7 @@ import core.thread;
 import derelict.sdl2.sdl;
 
 import gamestate;
-import controller;
+import control;
 import physics;
 import graphics;
 
