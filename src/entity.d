@@ -3,7 +3,7 @@ import std.stdio;
 import control;
 import physics;
 import graphics;
-import gamestate;
+import worldgeometry;
 
 // TODO: This feels too tightly coupled.
 // For event handling.

@@ -4,6 +4,7 @@ import std.math: abs;
 // We need to access entities' states to move them around in the world.
 import gamestate;
 import entity;
+import worldgeometry;
 
 class PhysicsComponent {
     private Entity parent_;

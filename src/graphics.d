@@ -6,6 +6,7 @@ import derelict.sdl2.sdl;
 // We need to read entities' states to draw them.
 import gamestate;
 import entity;
+import worldgeometry;
 
 alias ScreenRect = SDL_Rect;
 
