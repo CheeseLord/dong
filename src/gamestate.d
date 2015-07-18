@@ -63,6 +63,7 @@ void InitGameState()
     const double WALL_WIDTH = 5.0;
     const double PADDLE_WIDTH = 5.0;
     const double PADDLE_HEIGHT = 10.0;
+    const double PADDLE_MAX_SPEED = 30.0;
 
     // Left paddle
     gameState.entities ~= new Paddle(
@@ -73,7 +74,7 @@ void InitGameState()
             PADDLE_HEIGHT,
         ),
         BounceDirection.RIGHT,
-        PADDLE_HEIGHT,
+        PADDLE_MAX_SPEED,
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
@@ -87,7 +88,7 @@ void InitGameState()
             PADDLE_HEIGHT,
         ),
         BounceDirection.LEFT,
-        PADDLE_HEIGHT,
+        PADDLE_MAX_SPEED,
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
