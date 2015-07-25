@@ -5,6 +5,7 @@ import std.math: abs;
 import gamestate;
 import entity;
 import worldgeometry;
+import observer;
 
 class PhysicsComponent {
     private Entity parent_;
@@ -23,6 +24,8 @@ class PhysicsComponent {
 }
 
 class BallPhysics : PhysicsComponent {
+    mixin Subject;
+
     this(Ball parent)
     {
         super(parent);
@@ -79,6 +82,13 @@ class BallPhysics : PhysicsComponent {
                 }
             }
         }
+
+        // Send a notification if the ball has passed completely outside of the
+        // playing field.
+        if      (parent_.right < 0)
+            Notify(NotifyType.BALL_PASS_LEFT);
+        else if (parent_.left  > gameState.worldWidth)
+            Notify(NotifyType.BALL_PASS_RIGHT);
     }
 }
 
