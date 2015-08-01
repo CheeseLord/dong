@@ -1,5 +1,6 @@
 import std.stdio;
-import std.math: abs;
+import std.math:      abs;
+import std.algorithm: max, min;
 
 // We need to access entities' states to move them around in the world.
 import gamestate;
@@ -35,51 +36,81 @@ class BallPhysics : PhysicsComponent {
 
     override void Update(double elapsedTime)
     {
-        WorldRect oldWRect = parent_.wRect;
-        super.Update(elapsedTime);
-
         bool finishedBouncing = false;
+        Entity prevObstacle   = null;
 
         // NOTE: I'm not totally certain this won't be an infinite loop. I
         // can't think of a way that could happen since all of our walls are
         // axis-aligned (either perfectly vertical or perfectly horizontal),
         // but I also can't prove that it won't happen.
         while (!finishedBouncing) {
-            finishedBouncing = true;
+            // TODO: Repeated calls to super.Update could be a problem.
+            WorldRect oldWRect = parent_.wRect;
+            super.Update(elapsedTime);
+
+            Entity obstacle           = null;
+            double firstCollisionTime = elapsedTime;
+            double currCollisionTime;
 
             foreach (Entity entity; gameState.entities) {
-                if (entity.bounceDir == BounceDirection.LEFT) {
-                    if (MaybeBounce!("right",  "left",   false, true)
-                                    (parent_, entity, oldWRect)) {
-                        debug writefln("    Bouncing left.");
-                        finishedBouncing = false;
-                        break;
+                // Special case: we can't bounce off of ourself.
+                if (entity is parent_)
+                    continue;
+
+                // We also can't bounce off of the same obstacle twice
+                // consecutively; this is to prevent us from getting caught in
+                // an infinite loop when the ball bounces off of an obstacle
+                // and then is temporarily on top of that obstacle.
+                if (entity is prevObstacle)
+                    continue;
+
+                if (EntityCollides(oldWRect, parent_.wRect, entity.wRect,
+                                   elapsedTime, currCollisionTime)) {
+                    if (currCollisionTime < firstCollisionTime) {
+                        obstacle           = entity;
+                        firstCollisionTime = currCollisionTime;
                     }
                 }
-                else if (entity.bounceDir == BounceDirection.RIGHT) {
-                    if (MaybeBounce!("left",   "right",  false, false)
-                                    (parent_, entity, oldWRect)) {
-                        debug writefln("    Bouncing right.");
-                        finishedBouncing = false;
+            }
+
+            // Ensure the first collision time is strictly positive. This
+            // shouldn't be an issue, but it seems a good idea to add it
+            // anyway, just to make absolute sure we can't get stuck.
+            // FIXME: Evil magic numbers.
+            firstCollisionTime = max(firstCollisionTime, 1.0e-3);
+
+            if (obstacle !is null) {
+                // Simulate forward to the point of the collision, and set
+                // elapsedTime to the remaining elapsed time.
+                // TODO: Repeated calls to super.Update could be a problem.
+                parent_.wRect = oldWRect;
+                super.Update(firstCollisionTime);
+                elapsedTime -= firstCollisionTime;
+
+                // Primitive bounce: just invert the relevant component of our
+                // velocity.
+                switch (obstacle.bounceDir) {
+                    case BounceDirection.LEFT:
+                        parent_.xVel = - abs(parent_.xVel);
                         break;
-                    }
-                }
-                else if (entity.bounceDir == BounceDirection.UP) {
-                    if (MaybeBounce!("bottom", "top",    true,  true)
-                                    (parent_, entity, oldWRect)) {
-                        debug writefln("    Bouncing up.");
-                        finishedBouncing = false;
+                    case BounceDirection.RIGHT:
+                        parent_.xVel = + abs(parent_.xVel);
                         break;
-                    }
-                }
-                else if (entity.bounceDir == BounceDirection.DOWN) {
-                    if (MaybeBounce!("top",    "bottom", true,  false)
-                                    (parent_, entity, oldWRect)) {
-                        debug writefln("    Bouncing down.");
-                        finishedBouncing = false;
+                    case BounceDirection.UP:
+                        parent_.yVel = - abs(parent_.yVel);
                         break;
-                    }
+                    case BounceDirection.DOWN:
+                        parent_.yVel = + abs(parent_.yVel);
+                        break;
+                    default:
+                        // NO_BOUNCE; do nothing.
+                        break;
                 }
+
+                prevObstacle = obstacle;
+            }
+            else {
+                finishedBouncing = true;
             }
         }
 
@@ -93,100 +124,52 @@ class BallPhysics : PhysicsComponent {
 }
 
 /**
- * Templated function that checks whether one Entity ("me") collides with
- * another ("wall"), and if so reflects me off of wall in a particular
- * direction.
- * Template parameters:
- *     myEdge -- The edge of me that will hit the wall first. For example, if
- *         we're checking for collisions with the top wall, myEdge should be
- *         "top".
- *     wallEdge -- The edge of wall that me will hit first. For example, if
- *         we're checking for collisions with the top wall, myEdge should be
- *         "bottom".
- *     isVertical -- true if this is a vertical collision (that is, if we will
- *         be reflected upward or downward); false otherwise (that is, if we
- *         will be reflected leftward or rightward).
- *     isNegative -- true if the relevant component of me's velocity, after
- *         it bounces (assuming that it does bounce), will be negative (that
- *         is, if this is an upward or leftward bounce); false otherwise.
- * Function parameters:
- *     me -- The entity that may be bouncing. me.wRect should be the position
- *         that me will have assuming it does *not* bounce off of the wall.
- *     wall -- The entity that me may bounce off of.
- *     myOldRect -- The position of me at the start of this frame.
- * Returns true if me bounces off wall, false otherwise.
+ * Check if an entity collides with an obstacle. If so, then also set
+ * collisionTime to the amount of time elapsed when the entity first touches
+ * the obstacle. The obstacle is located at 'obstacle', and assumed not to
+ * move. The entity moves from 'start' to 'end', over a duration 'elapsedTime'.
+ * The entity's start and end must have the same width and height, and at least
+ * one of its x and y must change.
  */
-bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
-                 bool isNegative)
-                (Entity me, Entity wall, ref WorldRect myOldRect)
+private bool EntityCollides(WorldRect start, WorldRect end, WorldRect obstacle,
+                            double elapsedTime, out double collisionTime)
 {
-    // TODO: I couldn't figure out a way to create compile-time aliases to
-    // these (short of taking their addresses and storing them in pointers), so
-    // for now we're just calling mixin on them every time we need to use them.
-    // This isn't really the best thing.
-    enum string myEdgeCoord   = "me."   ~ myEdge;
-    enum string wallEdgeCoord = "wall." ~ wallEdge;
+    // The entity is assumed not to change size; that would complicate the
+    // collision-detection code considerably.
+    assert(abs(end.w - start.w) <  1.0e-6);
+    assert(abs(end.h - start.h) <  1.0e-6);
 
-    enum string myNewCorner1 = "me."        ~ GetEdgeCorners!myEdge  .corner1;
-    enum string myNewCorner2 = "me."        ~ GetEdgeCorners!myEdge  .corner2;
-    enum string myOldCorner1 = "myOldRect." ~ GetEdgeCorners!myEdge  .corner1;
-    enum string myOldCorner2 = "myOldRect." ~ GetEdgeCorners!myEdge  .corner2;
-    enum string wallCorner1  = "wall."      ~ GetEdgeCorners!wallEdge.corner1;
-    enum string wallCorner2  = "wall."      ~ GetEdgeCorners!wallEdge.corner2;
+    // The entity must move.
+    assert(abs(end.y - start.y) >= 1.0e-6 ||
+           abs(end.x - start.x) >= 1.0e-6);
 
-    // Determine the two things that depend on whether this is a vertical
-    // bounce or a horizontal bounce:
-    //  1. Component of our velocity that should be inverted: x if horizontal,
-    //     y if vertical.
-    //  2. The function used to check whether a line segment (from old position
-    //     to new position) intersects the wall. Note that the edge of the wall
-    //     that we bounce off of is perpendicular to the direction of the
-    //     bounce: for example, if we're bouncing horizontally, then we must
-    //     therefore be bouncing off of a *vertical* edge of a wall.
-    static if (isVertical) {
-        enum string myVel = "me.yVel";
-        alias Intersects = SegmentIntersectsHorizontal;
-    }
-    else {
-        enum string myVel = "me.xVel";
-        alias Intersects = SegmentIntersectsVertical;
-    }
+    // Expand obstacle left by the width of entity and up by the height of
+    // entity. This allows us to check for collisions between the top-left
+    // corner of entity and the expanded obstacle. Collision detection between
+    // a moving point and a rect is easier than between a moving rect and a
+    // rect.
+    WorldRect expandedObstacle = {
+        x: obstacle.x - start.w,
+        y: obstacle.y - start.h,
+        w: obstacle.w + start.w,
+        h: obstacle.h + start.h,
+    };
 
-    double deltaX = 0.0;
-    double deltaY = 0.0;
+    WorldPoint intersection;
+    if (TrajectoryIntersects(start.TL, end.TL, expandedObstacle,
+                             intersection)) {
+        // What fraction of the elapsedTime elapsed before the collision?
+        double collisionFraction;
 
-    // Check whether our displacement vector passes through the wall, setting
-    // deltaX and deltaY if so.
-    if     (Intersects(mixin(myOldCorner1), mixin(myNewCorner1),
-                       mixin(wallCorner1),  mixin(wallCorner2),
-                       deltaX, deltaY) ||
-            Intersects(mixin(myOldCorner2), mixin(myNewCorner2),
-                       mixin(wallCorner1),  mixin(wallCorner2),
-                       deltaX, deltaY)) {
+        // Use whichever axis we moved farther along to convert the
+        // intersection point to a fraction of time elapsed. These divisions
+        // are safe because the entity is required to move.
+        if (end.y - start.y > end.x - start.x)
+            collisionFraction = (intersection.y - start.y) / (end.y - start.y);
+        else
+            collisionFraction = (intersection.x - start.x) / (end.x - start.x);
 
-        // Use abs() to make sure we bounce in the right direction. If
-        // isNegative, then our final edge coordinate should be less than the
-        // wall's edge coordinate (we should be left of or above the wall);
-        // otherwise, our final edge coordinate should be greater than that
-        // of the wall (we should be to the right of or below the wall).
-        static if (isNegative) {
-            mixin(myEdgeCoord) = mixin(wallEdgeCoord) -
-                abs(mixin(myEdgeCoord)   - mixin(wallEdgeCoord));
-        }
-        else {
-            mixin(myEdgeCoord) = mixin(wallEdgeCoord) +
-                abs(mixin(wallEdgeCoord) - mixin(myEdgeCoord)  );
-        }
-
-        // Also update myOldRect to be at the point of intersection, allowing
-        // us to detect additional bounces that happened during this same
-        // frame.
-        myOldRect.x += deltaX;
-        myOldRect.y += deltaY;
-
-        // Actually start moving in the other direction.
-        mixin(myVel) = - mixin(myVel);
-
+        collisionTime = elapsedTime * collisionFraction;
         return true;
     }
     else {
@@ -195,6 +178,62 @@ bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
 }
 
 /**
+ * FIXME: Comment.
+ */
+private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
+                                  WorldRect obstacle,
+                                  out WorldPoint firstIntersection)
+{
+    // Is the start point outside of the obstacle?
+    bool isStartOutside = false;
+
+    // Check if the starting point is horizontally outside.
+    if (start.x < obstacle.left) {
+        isStartOutside = true;
+        if (SegmentIntersectsVertical(start, end, obstacle.TL, obstacle.BL,
+                                      firstIntersection)) {
+            return true;
+        }
+    }
+    else if (start.x > obstacle.right) {
+        isStartOutside = true;
+        if (SegmentIntersectsVertical(start, end, obstacle.TR, obstacle.BR,
+                                      firstIntersection)) {
+            return true;
+        }
+    }
+
+    // Check if the starting point is vertically outside.
+    if (start.y < obstacle.top) {
+        isStartOutside = true;
+        if (SegmentIntersectsHorizontal(start, end, obstacle.TL, obstacle.TR,
+                                        firstIntersection)) {
+            return true;
+        }
+    }
+    else if (start.y > obstacle.bottom) {
+        isStartOutside = true;
+        if (SegmentIntersectsHorizontal(start, end, obstacle.BL, obstacle.BR,
+                                        firstIntersection)) {
+            return true;
+        }
+    }
+
+    if (!isStartOutside) {
+        // This actually probably shouldn't happen. We'll handle it to be
+        // robust, but print a debug message so we can look into why it
+        // happened.
+        debug writefln("    Note: ball started frame inside paddle.");
+
+        firstIntersection = start;
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * FIXME: Fix comment
  * Check whether two line segments intersect. One segment goes from s1Start to
  * s1End; the other goes from s2Start to s2End. The second one must be
  * perfectly vertical. If they do intersect, set deltaX and deltaY to the
@@ -203,7 +242,7 @@ bool MaybeBounce(string myEdge, string wallEdge, bool isVertical,
  */
 private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
                                        WorldPoint s2Start, WorldPoint s2End,
-                                       ref double deltaX,  ref double deltaY)
+                                       out WorldPoint intersection)
 {
     // s2Start.x and s2End.x are assumed equal.
     double s2x = s2Start.x;
@@ -226,8 +265,7 @@ private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
         if     ((s2Start.y < intersectY && intersectY < s2End.y) ||
                 (s2Start.y > intersectY && intersectY > s2End.y)) {
             // The segments intersect.
-            deltaX = s2x        - s1Start.x;
-            deltaY = intersectY - s1Start.y;
+            intersection = WorldPoint(s2x, intersectY);
             return true;
         }
     }
@@ -236,6 +274,7 @@ private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
 }
 
 /**
+ * FIXME: Fix comment
  * Check whether two line segments intersect. One segment goes from s1Start to
  * s1End; the other goes from s2Start to s2End. The second one must be
  * perfectly horizontal. If they do intersect, set deltaX and deltaY to the
@@ -244,7 +283,7 @@ private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
  */
 private bool SegmentIntersectsHorizontal(WorldPoint s1Start, WorldPoint s1End,
                                          WorldPoint s2Start, WorldPoint s2End,
-                                         ref double deltaX,  ref double deltaY)
+                                         out WorldPoint intersection)
 {
     // s2Start.y and s2End.y are assumed equal.
     double s2y = s2Start.y;
@@ -267,8 +306,7 @@ private bool SegmentIntersectsHorizontal(WorldPoint s1Start, WorldPoint s1End,
         if     ((s2Start.x < intersectX && intersectX < s2End.x) ||
                 (s2Start.x > intersectX && intersectX > s2End.x)) {
             // The segments intersect.
-            deltaX = intersectX - s1Start.x;
-            deltaY = s2y        - s1Start.y;
+            intersection = WorldPoint(intersectX, s2y);
             return true;
         }
     }
