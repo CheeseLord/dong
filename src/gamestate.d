@@ -5,6 +5,8 @@ import entity;
 import worldgeometry;
 // TODO: We really want the controllers set in a user menu, not here.
 import control;
+import observer;
+import score;
 
 import derelict.sdl2.sdl;
 
@@ -16,6 +18,7 @@ struct _GameState {
     double worldHeight = 100.0;
 
     Entity[] entities;
+    ObserverList observers = new ObserverList();
 }
 
 _GameState gameState;
@@ -96,6 +99,11 @@ void InitGameState()
         25.0,                           // x velocity
         25.0,                           // y velocity
     );
+}
+
+void InitObservers()
+{
+    gameState.observers.AddObserver((x) => OnBallPass(x));
 }
 
 void UpdateWorld(Duration elapsedTime)

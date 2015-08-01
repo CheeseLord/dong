@@ -24,8 +24,6 @@ class PhysicsComponent {
 }
 
 class BallPhysics : PhysicsComponent {
-    mixin Subject;
-
     this(Ball parent)
     {
         super(parent);
@@ -83,12 +81,11 @@ class BallPhysics : PhysicsComponent {
             }
         }
 
-        // Send a notification if the ball has passed completely outside of the
-        // playing field.
+        // Check if the ball has moved outside the play field.
         if      (parent_.right < 0)
-            Notify(NotifyType.BALL_PASS_LEFT);
-        else if (parent_.left  > gameState.worldWidth)
-            Notify(NotifyType.BALL_PASS_RIGHT);
+            gameState.observers.Notify(NotifyType.BALL_PASS_LEFT);
+        else if (parent_.left > gameState.worldWidth)
+            gameState.observers.Notify(NotifyType.BALL_PASS_RIGHT);
     }
 }
 

@@ -17,6 +17,7 @@ void main()
     scope (exit) CleanupGraphics();
 
     InitGameState();
+    InitObservers();
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
@@ -31,7 +32,6 @@ void main()
         // Get the time at which this iteration of the event loop begins.
         MonoTime currStartTime = MonoTime.currTime;
 
-        // FIXME: Do stuff here.
         if (HandleEvents()) {
             break;
         }

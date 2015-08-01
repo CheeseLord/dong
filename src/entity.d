@@ -4,7 +4,6 @@ import control;
 import physics;
 import graphics;
 import worldgeometry;
-import observer;
 import score;
 
 // TODO: This feels too tightly coupled.
@@ -127,11 +126,6 @@ class Ball : Entity {
     {
         BallPhysics myPhysics = new BallPhysics(this);
         physics_ = myPhysics;
-
-        // Observers
-        // Use an anonymous function because for some reason we can't pass a
-        // function as a delegate?
-        myPhysics.AddObserver((x) => OnBallPass(x));
     }
 }
 
