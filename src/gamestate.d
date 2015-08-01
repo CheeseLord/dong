@@ -7,6 +7,7 @@ import worldgeometry;
 import control;
 import observer;
 import score;
+import sound;
 
 import derelict.sdl2.sdl;
 
@@ -103,7 +104,10 @@ void InitGameState()
 
 void InitObservers()
 {
-    gameState.observers.AddObserver((x) => OnBallPass(x));
+    gameState.observers.AddObserver((x) => score.OnBallPass(x));
+    gameState.observers.AddObserver((x) => sound.OnBallPass(x));
+    gameState.observers.AddObserver((x) => sound.HitPaddle(x));
+    gameState.observers.AddObserver((x) => sound.HitWall(x));
 }
 
 void UpdateWorld(Duration elapsedTime)

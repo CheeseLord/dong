@@ -4,6 +4,7 @@ import std.stdio;
 // BALL_BOUNCE_LEFT_PADDLE refers to the ball bouncing off of the left paddle,
 // even though that's a rightward bounce.
 enum NotifyType {BALL_BOUNCE_LEFT_PADDLE, BALL_BOUNCE_RIGHT_PADDLE,
+                 BALL_BOUNCE_BOTTOM_WALL, BALL_BOUNCE_TOP_WALL,
                  BALL_PASS_LEFT,          BALL_PASS_RIGHT};
 
 alias Observer = void delegate(NotifyType);
@@ -16,9 +17,9 @@ class ObserverList {
         observers_ ~= observer;
     }
 
-    void Notify(NotifyType event)
+    void Notify(NotifyType eventInfo)
     {
-        foreach (Observer observer; observers_) { observer(event); }
+        foreach (Observer observer; observers_) { observer(eventInfo); }
     }
 }
 

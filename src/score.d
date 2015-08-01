@@ -4,6 +4,13 @@ import observer;
 
 void OnBallPass(NotifyType eventInfo)
 {
-    debug writefln("Hey, the ball escaped: %s", eventInfo);
+    if (eventInfo == NotifyType.BALL_PASS_LEFT)
+    {
+        debug writefln("Hey, the ball escaped on the left.");
+    }
+    else if (eventInfo == NotifyType.BALL_PASS_RIGHT)
+    {
+        debug writefln("Hey, the ball escaped on the right.");
+    }
 }
 
