@@ -12,7 +12,7 @@ enum NotifyType {BALL_BOUNCE_LEFT_PADDLE, BALL_BOUNCE_RIGHT_PADDLE,
 
 alias Observer = void delegate(NotifyType);
 
-class ObserverList {
+private class ObserverList {
     Observer[] observers_ = [];
 
     void AddObserver(Observer observer)

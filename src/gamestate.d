@@ -9,7 +9,7 @@ import control;
 import derelict.sdl2.sdl;
 
 
-struct _GameState {
+private struct GameState {
     // Screen-independent size.
     // FIXME: Remove evil magic numbers.
     double worldWidth  = 200.0;
@@ -19,7 +19,7 @@ struct _GameState {
     Entity[] entities;
 }
 
-_GameState gameState;
+GameState gameState;
 
 void InitGameState()
 {
