@@ -18,6 +18,7 @@ struct _GameState {
     double worldWidth  = 200.0;
     double worldHeight = 100.0;
 
+    Ball ball;
     Entity[] entities;
     ObserverList observers = new ObserverList();
 }
@@ -90,9 +91,9 @@ void InitGameState()
     );
 
     // The ball
-    gameState.entities ~= new Ball(
+    Ball ball = new Ball(
         CenteredWRect(
-            gameState.worldWidth  / 10, // x
+            gameState.worldWidth  / 2,  // x
             gameState.worldHeight / 2,  // y
             3.0,                        // width
             3.0                         // height
@@ -100,6 +101,8 @@ void InitGameState()
         25.0,                           // x velocity
         25.0,                           // y velocity
     );
+    gameState.entities ~= ball;
+    gameState.ball = ball;
 }
 
 void InitObservers()

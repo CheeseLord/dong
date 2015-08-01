@@ -23,6 +23,12 @@ struct WorldRect {
     @property void  right(double newR) { x = newR - w; }
     @property void bottom(double newB) { y = newB - h; }
 
+    pure @property const double centerX() { return x + w / 2; }
+    pure @property const double centerY() { return y + h / 2; }
+
+    @property void centerX(double newX) { x = newX - w / 2; }
+    @property void centerY(double newY) { y = newY - h / 2; }
+
     pure @property const WorldPoint TL() { return WorldPoint(x    , y    ); }
     pure @property const WorldPoint TR() { return WorldPoint(x + w, y    ); }
     pure @property const WorldPoint BL() { return WorldPoint(x    , y + h); }

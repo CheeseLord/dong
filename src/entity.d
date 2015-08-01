@@ -110,6 +110,12 @@ class Entity {
     @property void    right(double newR) { wRect_.right  = newR; }
     @property void   bottom(double newB) { wRect_.bottom = newB; }
 
+    pure @property const double centerX() { return wRect_.centerX ; }
+    pure @property const double centerY() { return wRect_.centerY ; }
+
+    @property void centerX(double newX) { wRect_.centerX = newX; }
+    @property void centerY(double newY) { wRect_.centerY = newY; }
+
     pure @property const WorldPoint TL() { return wRect_.TL; }
     pure @property const WorldPoint TR() { return wRect_.TR; }
     pure @property const WorldPoint BL() { return wRect_.BL; }
