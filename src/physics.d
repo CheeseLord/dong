@@ -76,7 +76,7 @@ class BallPhysics : PhysicsComponent {
             // Ensure the first collision time is strictly positive. This
             // shouldn't be an issue, but it seems a good idea to add it
             // anyway, just to make absolute sure we can't get stuck.
-            // FIXME: Evil magic numbers.
+            // FIXME: Magic number.
             firstCollisionTime = max(firstCollisionTime, 1.0e-3);
 
             if (obstacle !is null) {
@@ -162,8 +162,8 @@ private bool EntityCollides(WorldRect start, WorldRect end, WorldRect obstacle,
         double collisionFraction;
 
         // Use whichever axis we moved farther along to convert the
-        // intersection point to a fraction of time elapsed. These divisions
-        // are safe because the entity is required to move.
+        // intersection point to a fraction of time elapsed. We are safe from
+        // division by zero here because the entity is required to move.
         if (end.y - start.y > end.x - start.x)
             collisionFraction = (intersection.y - start.y) / (end.y - start.y);
         else
@@ -178,16 +178,61 @@ private bool EntityCollides(WorldRect start, WorldRect end, WorldRect obstacle,
 }
 
 /**
- * FIXME: Comment.
+ * Check if a moving point collides with an obstacle. The point moves from
+ * 'start' to 'end'; the obstacle is located at 'obstacle'. If it does collide,
+ * set firstIntersection to the first coordinates along the point's trajectory
+ * at which it intersects the obstacle.
  */
 private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
                                   WorldRect obstacle,
                                   out WorldPoint firstIntersection)
 {
+    // High-level explanation:
+    //
+    // The start point will fall within one of 9 regions, defined by the
+    // obstacle rect:
+    //
+    //           .       .
+    //       TL  .   T   .  TR
+    //           .       .
+    //     . . . +-------+ . . .
+    //           |       |
+    //        L  |   C   |   R
+    //           |       |
+    //     . . . +-------+ . . .
+    //           .       .
+    //       BL  .   B   .  BR
+    //           .       .
+    //
+    // If it's in C, then our job is easy: the answer is "yes, the point
+    // collides with the obstacle, and its first intersection is start."
+    //
+    // If it's not in C, then the only way the point can collide with the
+    // obstacle is if its trajectory intersects one of the four edges of the
+    // rect (that is, it must enter the rect at some point). If it interects
+    // exactly one of them (that is, it ends inside the rect), then our job is
+    // also easy; we just need to return that point of intersection. But it's
+    // also possible that the point will go all the way through the rect in one
+    // frame. This is where the regions are helpful.
+    //
+    // If the point starts in L, T, R, or B, then there is only one edge it can
+    // possibly enter through: respectively the left, top, right, or bottom.
+    // If it starts in TL, TR, BL, or BR, then there are two edges it can enter
+    // through (for TL the top and left, for TR the top and right, and so on),
+    // and it can't exit through either of those two. This means that all we
+    // need to do is check for intersections with the possible entry edges,
+    // determined based on the point's starting region.
+    //
+    // The logic for that can be reexpressed as follows:
+    //     If we're in TL, L, or BL, check for intersection with left   edge.
+    //     If we're in TL, T, or TR, check for intersection with top    edge.
+    //     If we're in TR, R, or BR, check for intersection with right  edge.
+    //     If we're in BL, B, or BR, check for intersection with bottom edge.
+
     // Is the start point outside of the obstacle?
     bool isStartOutside = false;
 
-    // Check if the starting point is horizontally outside.
+    // If we're in TL, L, or BL, check for intersection with left   edge.
     if (start.x < obstacle.left) {
         isStartOutside = true;
         if (SegmentIntersectsVertical(start, end, obstacle.TL, obstacle.BL,
@@ -195,6 +240,7 @@ private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
             return true;
         }
     }
+    // If we're in TR, R, or BR, check for intersection with right  edge.
     else if (start.x > obstacle.right) {
         isStartOutside = true;
         if (SegmentIntersectsVertical(start, end, obstacle.TR, obstacle.BR,
@@ -203,7 +249,7 @@ private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
         }
     }
 
-    // Check if the starting point is vertically outside.
+    // If we're in TL, T, or TR, check for intersection with top    edge.
     if (start.y < obstacle.top) {
         isStartOutside = true;
         if (SegmentIntersectsHorizontal(start, end, obstacle.TL, obstacle.TR,
@@ -211,6 +257,7 @@ private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
             return true;
         }
     }
+    // If we're in BL, B, or BR, check for intersection with bottom edge.
     else if (start.y > obstacle.bottom) {
         isStartOutside = true;
         if (SegmentIntersectsHorizontal(start, end, obstacle.BL, obstacle.BR,
@@ -219,26 +266,27 @@ private bool TrajectoryIntersects(WorldPoint start, WorldPoint end,
         }
     }
 
+    // If none of the four checks above triggered, then the only region we can
+    // be in is C. In this case, the answer is easy.
     if (!isStartOutside) {
         // This actually probably shouldn't happen. We'll handle it to be
         // robust, but print a debug message so we can look into why it
         // happened.
-        debug writefln("    Note: ball started frame inside paddle.");
+        debug writefln("Note: ball started frame inside paddle.");
 
         firstIntersection = start;
         return true;
     }
 
+    // If none of the above checks found an intersection, then there isn't one.
     return false;
 }
 
 /**
- * FIXME: Fix comment
  * Check whether two line segments intersect. One segment goes from s1Start to
  * s1End; the other goes from s2Start to s2End. The second one must be
- * perfectly vertical. If they do intersect, set deltaX and deltaY to the
- * offset (x, y) from s1Start to the point of intersection. If they don't
- * intersect, leave deltaX and deltaY unchanged.
+ * perfectly vertical. If they do intersect, store the point of intersection in
+ * intersection.
  */
 private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
                                        WorldPoint s2Start, WorldPoint s2End,
@@ -274,12 +322,10 @@ private bool SegmentIntersectsVertical(WorldPoint s1Start, WorldPoint s1End,
 }
 
 /**
- * FIXME: Fix comment
  * Check whether two line segments intersect. One segment goes from s1Start to
  * s1End; the other goes from s2Start to s2End. The second one must be
- * perfectly horizontal. If they do intersect, set deltaX and deltaY to the
- * offset (x, y) from s1Start to the point of intersection. If they don't
- * intersect, leave deltaX and deltaY unchanged.
+ * perfectly horizontal. If they do intersect, store the point of intersection
+ * in intersection.
  */
 private bool SegmentIntersectsHorizontal(WorldPoint s1Start, WorldPoint s1End,
                                          WorldPoint s2Start, WorldPoint s2End,
