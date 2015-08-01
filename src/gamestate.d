@@ -5,9 +5,6 @@ import entity;
 import worldgeometry;
 // TODO: We really want the controllers set in a user menu, not here.
 import control;
-import observer;
-import score;
-import sound;
 
 import derelict.sdl2.sdl;
 
@@ -20,7 +17,6 @@ struct _GameState {
 
     Ball ball;
     Entity[] entities;
-    ObserverList observers = new ObserverList();
 }
 
 _GameState gameState;
@@ -103,14 +99,6 @@ void InitGameState()
     );
     gameState.entities ~= ball;
     gameState.ball = ball;
-}
-
-void InitObservers()
-{
-    gameState.observers.AddObserver((x) => score.OnBallPass(x));
-    gameState.observers.AddObserver((x) => sound.OnBallPass(x));
-    gameState.observers.AddObserver((x) => sound.HitPaddle(x));
-    gameState.observers.AddObserver((x) => sound.HitWall(x));
 }
 
 void UpdateWorld(Duration elapsedTime)

@@ -10,6 +10,7 @@ import gamestate;
 import control;
 import physics;
 import graphics;
+import observer;
 
 void main()
 {

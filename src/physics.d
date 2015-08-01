@@ -114,9 +114,9 @@ class BallPhysics : PhysicsComponent {
 
         // Check if the ball has moved outside the play field.
         if      (parent_.right < 0)
-            gameState.observers.Notify(NotifyType.BALL_PASS_LEFT);
+            observers.Notify(NotifyType.BALL_PASS_LEFT);
         else if (parent_.left > gameState.worldWidth)
-            gameState.observers.Notify(NotifyType.BALL_PASS_RIGHT);
+            observers.Notify(NotifyType.BALL_PASS_RIGHT);
     }
 }
 
