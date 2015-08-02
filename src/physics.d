@@ -85,25 +85,7 @@ class BallPhysics : PhysicsComponent {
                 super.Update(firstCollisionTime);
                 elapsedTime -= firstCollisionTime;
 
-                // Primitive bounce: just invert the relevant component of our
-                // velocity.
-                switch (obstacle.bounceDir) {
-                    case BounceDirection.LEFT:
-                        parent_.xVel = - abs(parent_.xVel);
-                        break;
-                    case BounceDirection.RIGHT:
-                        parent_.xVel = + abs(parent_.xVel);
-                        break;
-                    case BounceDirection.UP:
-                        parent_.yVel = - abs(parent_.yVel);
-                        break;
-                    case BounceDirection.DOWN:
-                        parent_.yVel = + abs(parent_.yVel);
-                        break;
-                    default:
-                        // NO_BOUNCE; do nothing.
-                        break;
-                }
+                Bounce(parent_, obstacle.bounceDir);
 
                 prevObstacle = obstacle;
             }
@@ -117,6 +99,36 @@ class BallPhysics : PhysicsComponent {
             observers.Notify(NotifyType.BALL_PASS_LEFT);
         else if (parent_.left > gameState.worldWidth)
             observers.Notify(NotifyType.BALL_PASS_RIGHT);
+    }
+}
+
+void Bounce(Entity entity, BounceDirection bounceDir)
+{
+    // Primitive bounce: just invert the relevant component of our velocity.
+    //
+    // Note that the notification types are inverted relative to the bounce
+    // direction because the ball bounces inward, so (for example) if it
+    // bounces to the right, then it's bouncing at the left edge of the field.
+    switch (bounceDir) {
+        case BounceDirection.LEFT:
+            observers.Notify(NotifyType.BALL_BOUNCE_RIGHT_PADDLE);
+            entity.xVel = - abs(entity.xVel);
+            break;
+        case BounceDirection.RIGHT:
+            observers.Notify(NotifyType.BALL_BOUNCE_LEFT_PADDLE);
+            entity.xVel = + abs(entity.xVel);
+            break;
+        case BounceDirection.UP:
+            observers.Notify(NotifyType.BALL_BOUNCE_BOTTOM_WALL);
+            entity.yVel = - abs(entity.yVel);
+            break;
+        case BounceDirection.DOWN:
+            observers.Notify(NotifyType.BALL_BOUNCE_TOP_WALL);
+            entity.yVel = + abs(entity.yVel);
+            break;
+        default:
+            // NO_BOUNCE; do nothing.
+            break;
     }
 }
 
