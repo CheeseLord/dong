@@ -1,5 +1,5 @@
 import std.stdio;
-import std.math:      abs;
+import std.math;
 import std.algorithm: max, min;
 
 // We need to access entities' states to move them around in the world.
@@ -85,7 +85,16 @@ class BallPhysics : PhysicsComponent {
                 super.Update(firstCollisionTime);
                 elapsedTime -= firstCollisionTime;
 
-                Bounce(parent_, obstacle.bounceDir);
+                // FIXME: Dymanic casts bad.
+                if (cast(Paddle)(obstacle)) {
+                    BouncePaddle(parent_, obstacle.wRect, obstacle.bounceDir);
+                }
+                else if (cast(Wall)(obstacle)) {
+                    BounceWall(parent_, obstacle.bounceDir);
+                }
+                else {
+                    // We don't know how to bounce, so don't.
+                }
 
                 prevObstacle = obstacle;
             }
@@ -102,7 +111,7 @@ class BallPhysics : PhysicsComponent {
     }
 }
 
-void Bounce(Entity entity, BounceDirection bounceDir)
+void BounceWall(Entity entity, BounceDirection bounceDir)
 {
     // Primitive bounce: just invert the relevant component of our velocity.
     //
@@ -130,6 +139,84 @@ void Bounce(Entity entity, BounceDirection bounceDir)
             // NO_BOUNCE; do nothing.
             break;
     }
+}
+
+// TODO: Comment better
+void BouncePaddle(Entity entity, WorldRect obstacle, BounceDirection bounceDir)
+{
+    // Expand obstacle as in EntityCollides.
+    // FIXME: Factor out common calculation.
+    WorldRect expandedObstacle = {
+        x: obstacle.x - entity.w,
+        y: obstacle.y - entity.h,
+        w: obstacle.w + entity.w,
+        h: obstacle.h + entity.h,
+    };
+
+    // Construct a quarter-circle whose center has the same y as the center of
+    // the (expanded) obstacle.
+    double circleY  = expandedObstacle.centerY;
+    double circleR2 = 0.5 * (expandedObstacle.h ^^ 2); // radius squared
+
+    // Find the point on that circle with the same y coordinate as entity.
+    // We'll treat this as the point of collision for purposes of reflection
+    // calculations.
+    // TODO: We don't actually need intersectX; we can use y and r to find the
+    // angle instead. But the calculation may be clearer this way.
+    double intersectY = entity.y - circleY;
+    double intersectX = sqrt(circleR2 - intersectY^^2);
+
+    // The bounce direction determines whether we use the left quarter or the
+    // right quarter.
+    switch(bounceDir) {
+        case BounceDirection.RIGHT: /* intersectX is correct. */ break;
+        case BounceDirection.LEFT:  intersectX = -intersectX;    break;
+        default: assert(false); // Vertical play not supported yet.
+    }
+
+    // Angle of entity's initial velocity.
+    double initialAngle   = atan2(entity.yVel, entity.xVel);
+
+    // Angle of vector from center of circle to point of collision.
+    double radialAngle    = atan2(intersectY, intersectX);
+
+    // Angle of velocity reflected across the line formed by the radial vector.
+    double reflectedAngle = 2*radialAngle - initialAngle - PI;
+
+    // Use a weighted average of the reflected and radial angles, to ensure the
+    // entity actually bounces in the right direction and doesn't just skim the
+    // surface of the obstacle but keep going in essentially the same
+    // direction.
+    // FIXME: Magic numbers.
+    double finalAngle = WeightedAverageOfAngles(radialAngle, reflectedAngle,
+                                                0.39);
+
+    // For now, increase the magnitude of the velocity by a constant.
+    // TODO: Make it faster when going more vertically.
+    double finalSpeed = hypot(entity.xVel, entity.yVel) + 3.0;
+
+    // TODO: Randomize the final angle and possibly speed a little.
+
+    // TODO: Check that the horizontal component of entity's velocity is in the
+    // right direction; impose some sort of minimum.
+
+    entity.xVel = finalSpeed * cos(finalAngle);
+    entity.yVel = finalSpeed * sin(finalAngle);
+}
+
+/**
+ * Find a weighted average of two angles. The weight is the weight on angle2,
+ * so a weight of 0 means to return angle1 and a weight of 1 means to return
+ * angle2. Weighting is done by taking a weighted sum of unit vectors in the
+ * two directions. If weight is 0.5 and the two angles point in exactly
+ * opposite directions, you're gonna have a bad time.
+ */
+double WeightedAverageOfAngles(double angle1, double angle2, double weight2)
+{
+    return atan2(
+            (1 - weight2) * sin(angle1) + weight2 * sin(angle2),
+            (1 - weight2) * cos(angle1) + weight2 * cos(angle2)
+        );
 }
 
 /**
