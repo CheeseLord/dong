@@ -173,7 +173,7 @@ private bool EntityCollides(WorldRect start, WorldRect end, WorldRect obstacle,
         // Use whichever axis we moved farther along to convert the
         // intersection point to a fraction of time elapsed. We are safe from
         // division by zero here because the entity is required to move.
-        if (end.y - start.y > end.x - start.x)
+        if (abs(end.y - start.y) > abs(end.x - start.x))
             collisionFraction = (intersection.y - start.y) / (end.y - start.y);
         else
             collisionFraction = (intersection.x - start.x) / (end.x - start.x);
