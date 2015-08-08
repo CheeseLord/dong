@@ -4,7 +4,7 @@ import control;
 import physics;
 import graphics;
 import worldgeometry;
-import score;
+import gamestate;
 
 // TODO: This feels too tightly coupled.
 // For event handling.
@@ -122,6 +122,8 @@ class Entity {
     pure @property const WorldPoint BR() { return wRect_.BR; }
 }
 
+enum BallStartDirection {LEFT, UP, RIGHT, DOWN}
+
 class Ball : Entity {
     this(WorldRect startWRect, double startXVel = 30.0, double startYVel = 0)
     {
@@ -132,6 +134,22 @@ class Ball : Entity {
     {
         BallPhysics myPhysics = new BallPhysics(this);
         physics_ = myPhysics;
+    }
+
+    void Reset(BallStartDirection direction)
+    {
+        x = gameState.worldWidth  / 2;
+        y = gameState.worldHeight / 2;
+
+        if (direction == BallStartDirection.LEFT) {
+            xVel = -30;
+            yVel = 0;
+        }
+        else if (direction == BallStartDirection.RIGHT) {
+            xVel = 30;
+            yVel = 0;
+        }
+        // TODO: Handle UP and DOWN.
     }
 }
 

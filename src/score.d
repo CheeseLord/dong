@@ -2,6 +2,7 @@ import std.stdio;
 
 import gamestate;
 import observer;
+import entity;
 
 void OnBallPass(NotifyType eventInfo)
 {
@@ -10,16 +11,14 @@ void OnBallPass(NotifyType eventInfo)
         debug writefln("Hey, the ball escaped on the left.");
         scores.RightPlayerScore();
         debug writefln("Score: %d - %d", scores.left, scores.right);
-        gameState.ball.centerX = gameState.worldWidth / 2;
-        gameState.ball.centerY = gameState.worldHeight / 2;
+        gameState.ball.Reset(BallStartDirection.LEFT);
     }
     else if (eventInfo == NotifyType.BALL_PASS_RIGHT)
     {
         debug writefln("Hey, the ball escaped on the right.");
         scores.LeftPlayerScore();
         debug writefln("Score: %d - %d", scores.left, scores.right);
-        gameState.ball.centerX = gameState.worldWidth / 2;
-        gameState.ball.centerY = gameState.worldHeight / 2;
+        gameState.ball.Reset(BallStartDirection.RIGHT);
     }
 }
 
