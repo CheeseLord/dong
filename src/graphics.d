@@ -59,7 +59,7 @@ void InitGraphics()
 
     // Set up the font.
     // TODO: Get default fonts.
-    font = TTF_OpenFont("fonts/UbuntuMono-B.ttf", 96);
+    font = TTF_OpenFont("fonts/UbuntuMono-B.ttf", 72);
 }
 
 void CleanupGraphics()
@@ -92,15 +92,17 @@ void RenderGame()
 
 void RenderScores()
 {
-    SDL_Color scoreColor = {255, 255, 255};
-    leftScore  = TTF_RenderText_Solid(font, to!string(scores.left).toStringz,
-                                     scoreColor);
-    rightScore = TTF_RenderText_Solid(font, to!string(scores.right).toStringz,
-                                     scoreColor);
-    // FIXME: Actually display.
+    SDL_Color scoreColor = {0, 50, 255};
+    leftScore  = TTF_RenderText_Solid(font, toStringz(to!string(scores.left )),
+                                      scoreColor);
+    rightScore = TTF_RenderText_Solid(font, toStringz(to!string(scores.right)),
+                                      scoreColor);
 
-    debug writefln("leftScore is %s, rightScore is %s", leftScore, rightScore);
-    SDL_Rect tmp = {x:50, y:50, w:0, h:0}; // FIXME
-    SDL_BlitSurface(leftScore, null, surface, &tmp);
+    int offset = 200;
+    SDL_Rect leftPosition  = {x:offset,                            y:50};
+    SDL_Rect rightPosition = {x:surface.w - rightScore.w - offset, y:50};
+
+    SDL_BlitSurface(leftScore,  null, surface, &leftPosition );
+    SDL_BlitSurface(rightScore, null, surface, &rightPosition);
 }
 
