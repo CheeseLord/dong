@@ -1,0 +1,4 @@
+The following packages are necessary:
+
+libsdl2-ttf-2.0-0
+
