@@ -1,4 +1,5 @@
 import std.stdio;
+import std.string;
 import std.conv;
 
 // For drawing.
@@ -94,9 +95,9 @@ void RenderGame()
 void RenderScores()
 {
     SDL_Color scoreColor = {255, 255, 255};
-    leftScore  = TTF_RenderText_Solid(font, to!string(scores.left).ptr,
+    leftScore  = TTF_RenderText_Solid(font, to!string(scores.left).toStringz,
                                      scoreColor);
-    rightScore = TTF_RenderText_Solid(font, to!string(scores.right).ptr,
+    rightScore = TTF_RenderText_Solid(font, to!string(scores.right).toStringz,
                                      scoreColor);
     // FIXME: Actually display.
 
