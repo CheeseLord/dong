@@ -1,5 +1,13 @@
 import std.stdio;
 
+import derelict.sdl2.sdl;
+
+import gamestate;
+
+// TODO: Rename this module, so that ScreenRect actually belongs. It needs to
+// be here for the screen/world conversion functions.
+alias ScreenRect = SDL_Rect;
+
 // I suppose we could use this in the WorldRect struct, but I don't really want
 // to add more indirection there.
 struct WorldPoint {
@@ -56,5 +64,37 @@ WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
         w,               // width
         h                // height
     );
+}
+
+
+/*****************************************************************************
+ * World/Screen conversion
+ *****************************************************************************/
+
+/**
+ * Convert a rect from world coordinates to screen coordinates.
+ * The resulting rect will be stored in sRect.
+ * sWorldRect is the region of the screen corresponding to the entire world.
+ * wRect is the rect to be converted.
+ * TODO: Magic markup in function comments so parameter names and such get
+ * displayed correctly in generated HTML docs?
+ */
+ScreenRect WorldToScreenRect(WorldRect wRect, ScreenRect sWorldRect)
+{
+    // Find the scale factors.
+    double horizontalScale = sWorldRect.w / gameState.worldWidth;
+    double verticalScale   = sWorldRect.h / gameState.worldHeight;
+
+    // Convert the rect.
+    ScreenRect sRect = {
+        // Note: if the world started at anything other than (0, 0), we'd need
+        // to subtract its top-left coordinates before rescaling x and y.
+        x: cast(int) (horizontalScale * wRect.x + sWorldRect.x),
+        y: cast(int) (verticalScale   * wRect.y + sWorldRect.y),
+        w: cast(int) (horizontalScale * wRect.w),
+        h: cast(int) (verticalScale   * wRect.h)
+    };
+
+    return sRect;
 }
 

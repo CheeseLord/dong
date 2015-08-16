@@ -12,8 +12,6 @@ import entity;
 import worldgeometry;
 import score;
 
-alias ScreenRect = SDL_Rect;
-
 private SDL_Window  *window  = null;
 private SDL_Surface *surface = null;
 
@@ -104,33 +102,5 @@ void RenderScores()
     debug writefln("leftScore is %s, rightScore is %s", leftScore, rightScore);
     SDL_Rect tmp = {x:50, y:50, w:0, h:0}; // FIXME
     SDL_BlitSurface(leftScore, null, surface, &tmp);
-}
-
-
-/**
- * Convert a rect from world coordinates to screen coordinates.
- * The resulting rect will be stored in sRect.
- * sWorldRect is the region of the screen corresponding to the entire world.
- * wRect is the rect to be converted.
- * TODO: Magic markup in function comments so parameter names and such get
- * displayed correctly in generated HTML docs?
- */
-ScreenRect WorldToScreenRect(WorldRect wRect, ScreenRect sWorldRect)
-{
-    // Find the scale factors.
-    double horizontalScale = sWorldRect.w / gameState.worldWidth;
-    double verticalScale   = sWorldRect.h / gameState.worldHeight;
-
-    // Convert the rect.
-    ScreenRect sRect = {
-        // Note: if the world started at anything other than (0, 0), we'd need
-        // to subtract its top-left coordinates before rescaling x and y.
-        x: cast(int) (horizontalScale * wRect.x + sWorldRect.x),
-        y: cast(int) (verticalScale   * wRect.y + sWorldRect.y),
-        w: cast(int) (horizontalScale * wRect.w),
-        h: cast(int) (verticalScale   * wRect.h)
-    };
-
-    return sRect;
 }
 
