@@ -1,6 +1,7 @@
 import std.stdio;
 import std.math;
 import std.algorithm: max, min;
+import std.random;
 
 // We need to access entities' states to move them around in the world.
 import gamestate;
@@ -187,9 +188,37 @@ void BouncePaddle(Entity entity, WorldRect obstacle, BounceDirection bounceDir)
     // entity actually bounces in the right direction and doesn't just skim the
     // surface of the obstacle but keep going in essentially the same
     // direction.
+    //
+    // The radialAngle can be as steep as 45 degrees (at the very edge of the
+    // paddle), while the reflectedAngle can point (almost) straight backwards
+    // (if the ball comes in on a nearly-vertical heading). Hence the
+    // horizontal component of the radial unit vector is at least sqrt(2)/2
+    // inward, while the horizontal component of the reflected unit vector can
+    // be as much as 1 outward. To ensure that the final velocity has an
+    // inward-pointing horizontal component, this means we need to give the
+    // reflectedAngle a weight of less than
+    //
+    //             1                 1
+    //     ----------------- = ------------- = sqrt(2) - 1 = 0.414...
+    //      1 + 2 / sqrt(2)     1 + sqrt(2)
+    //
     // FIXME: Magic numbers.
     double finalAngle = WeightedAverageOfAngles(radialAngle, reflectedAngle,
-                                                0.39);
+                                                0.4);
+
+    // Add some randomness to the bounce direction.
+    finalAngle += uniform(-0.2, 0.2);
+
+    // Ensure the angle points in the right direction and isn't too vertical.
+    // This is probably necessary because of the added randomness.
+    // TODO: This switch/case could probably be combined with the one above.
+    double rangeCenter;
+    switch(bounceDir) {
+        case BounceDirection.RIGHT: rangeCenter = 0.0; break;
+        case BounceDirection.LEFT:  rangeCenter = PI;  break;
+        default: assert(false); // Vertical play not supported yet.
+    }
+    finalAngle = CapAngle(finalAngle, rangeCenter, (PI/2) - 0.2);
 
     // For now, increase the magnitude of the velocity by a constant.
     // TODO: Make it faster when going more vertically.
@@ -211,12 +240,39 @@ void BouncePaddle(Entity entity, WorldRect obstacle, BounceDirection bounceDir)
  * two directions. If weight is 0.5 and the two angles point in exactly
  * opposite directions, you're gonna have a bad time.
  */
-double WeightedAverageOfAngles(double angle1, double angle2, double weight2)
+private double WeightedAverageOfAngles(double angle1,
+                                       double angle2,
+                                       double weight2)
 {
     return atan2(
             (1 - weight2) * sin(angle1) + weight2 * sin(angle2),
             (1 - weight2) * cos(angle1) + weight2 * cos(angle2)
         );
+}
+
+/**
+ * Cap angle to the range
+ *     [rangeCenter - rangeRadius, rangeCenter + rangeRadius].
+ * For an angle outside of the range, it will be mapped to either the very
+ * bottom of the range or the very top, depending on whether it's clockwise or
+ * counterclockwise of the angle exactly opposite of rangeCenter. If angle is
+ * exactly that cutoff angle, then it will arbitrarily be assigned to one or
+ * the other bound of the interval.
+ */
+private double CapAngle(double angle,
+                        double rangeCenter,
+                        double rangeRadius)
+{
+    double cutoffAngle = rangeCenter - PI;
+
+    // Mod angle into the interval [cutoffAngle, cutoffAngle + 2*PI).
+    angle = fmod(angle - cutoffAngle, 2*PI) + cutoffAngle;
+    if (angle < cutoffAngle)
+        angle += 2*PI;
+
+    angle = max(angle, rangeCenter - rangeRadius);
+    angle = min(angle, rangeCenter + rangeRadius);
+    return angle;
 }
 
 /**
