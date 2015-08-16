@@ -2,3 +2,23 @@ The following packages are necessary:
 
 libsdl2-ttf-2.0-0
 
+
+
+Notes on installing from source:
+
+
+                ==> libsdl2-ttf-2.0-0 <==
+
+If this isn't in your package repositories (and none of the similarly-named
+ones seem to work in its place), then you can build it from source. As of 15
+Aug 2015, the source can be downloaded from:
+
+    http://www.libsdl.org/projects/SDL_ttf/
+
+It requires FreeType to work. You probably already have that installed. If not,
+you'll have to figure out how to get it (I already had it on my system). Once
+you have FreeType, just download the source, unpack it, and do the standard
+    ./configure
+    make
+    sudo make install
+
