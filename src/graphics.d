@@ -99,6 +99,10 @@ void RenderScores()
     rightScore = TTF_RenderText_Solid(font, to!string(scores.right).ptr,
                                      scoreColor);
     // FIXME: Actually display.
+
+    debug writefln("leftScore is %s, rightScore is %s", leftScore, rightScore);
+    SDL_Rect tmp = {x:50, y:50, w:0, h:0}; // FIXME
+    SDL_BlitSurface(leftScore, null, surface, &tmp);
 }
 
 
