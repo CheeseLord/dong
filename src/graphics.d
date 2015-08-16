@@ -20,8 +20,6 @@ private TTF_Font *font;
 private SDL_Surface *leftScore = null;
 private SDL_Surface *rightScore;
 
-private ScreenRect sWorldRect;
-
 void InitGraphics()
 {
     // Set up SDL and TTF.
@@ -80,7 +78,7 @@ void RenderGame()
     RenderScores();
 
     foreach (Entity entity; gameState.entities) {
-        ScreenRect sEntityRect = WorldToScreenRect(entity.wRect, sWorldRect);
+        ScreenRect sEntityRect = WorldToScreenRect(entity.wRect);
 
         SDL_FillRect(surface, &sEntityRect,
                      SDL_MapRGB(surface.format, 0, 191, 0));

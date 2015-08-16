@@ -61,7 +61,7 @@ void InitGameState()
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
-    rightPaddle.SetControl(new KeyControlComponent(rightPaddle));
+    rightPaddle.SetControl(new MouseControlComponent(rightPaddle));
     gameState.entities ~= rightPaddle;
 
     // Top wall

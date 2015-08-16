@@ -8,6 +8,8 @@ import gamestate;
 // be here for the screen/world conversion functions.
 alias ScreenRect = SDL_Rect;
 
+ScreenRect sWorldRect;
+
 // I suppose we could use this in the WorldRect struct, but I don't really want
 // to add more indirection there.
 struct WorldPoint {
@@ -73,13 +75,10 @@ WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
 
 /**
  * Convert a rect from world coordinates to screen coordinates.
- * The resulting rect will be stored in sRect.
- * sWorldRect is the region of the screen corresponding to the entire world.
- * wRect is the rect to be converted.
  * TODO: Magic markup in function comments so parameter names and such get
  * displayed correctly in generated HTML docs?
  */
-ScreenRect WorldToScreenRect(WorldRect wRect, ScreenRect sWorldRect)
+ScreenRect WorldToScreenRect(WorldRect wRect)
 {
     // Find the scale factors.
     double horizontalScale = sWorldRect.w / gameState.worldWidth;
@@ -96,5 +95,27 @@ ScreenRect WorldToScreenRect(WorldRect wRect, ScreenRect sWorldRect)
     };
 
     return sRect;
+}
+
+/**
+ * Convert a rect from screen coordinates to world coordinates.
+ */
+ScreenRect ScreenToWorldRect(ScreenRect sRect)
+{
+    // Find the scale factors.
+    double horizontalScale = gameState.worldWidth  / sWorldRect.w;
+    double verticalScale   = gameState.worldHeight / sWorldRect.h;
+
+    // Convert the rect.
+    ScreenRect wRect = {
+        // Note: if the world started at anything other than (0, 0), we'd need
+        // to subtract its top-left coordinates before rescaling x and y.
+        x: cast(int) (horizontalScale * (sRect.x - sWorldRect.x)),
+        y: cast(int) (verticalScale   * (sRect.y - sWorldRect.y)),
+        w: cast(int) (horizontalScale *  sRect.w),
+        h: cast(int) (verticalScale   *  sRect.h)
+    };
+
+    return wRect;
 }
 
