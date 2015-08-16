@@ -97,8 +97,8 @@ void RenderScores()
                                       scoreColor);
 
     int offset = 200;
-    SDL_Rect leftPosition  = {x:offset,                            y:50};
-    SDL_Rect rightPosition = {x:surface.w - rightScore.w - offset, y:50};
+    SDL_Rect leftPosition  = {x:offset - leftScore.w, y:50};
+    SDL_Rect rightPosition = {x:surface.w - offset, y:50};
 
     SDL_BlitSurface(leftScore,  null, surface, &leftPosition );
     SDL_BlitSurface(rightScore, null, surface, &rightPosition);
