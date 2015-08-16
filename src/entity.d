@@ -138,8 +138,8 @@ class Ball : Entity {
 
     void Reset(BallStartDirection direction)
     {
-        x = gameState.worldWidth  / 2;
-        y = gameState.worldHeight / 2;
+        centerX = gameState.worldWidth  / 2;
+        centerY = gameState.worldHeight / 2;
 
         if (direction == BallStartDirection.LEFT) {
             xVel = -30;
