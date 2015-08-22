@@ -88,7 +88,7 @@ void RenderGame()
     SDL_UpdateWindowSurface(window);
 }
 
-void RenderScores()
+private void RenderScores()
 {
     SDL_Color scoreColor = {0, 50, 255};
     leftScore  = TTF_RenderText_Solid(font, toStringz(to!string(scores.left )),
@@ -102,5 +102,11 @@ void RenderScores()
 
     SDL_BlitSurface(leftScore,  null, surface, &leftPosition );
     SDL_BlitSurface(rightScore, null, surface, &rightPosition);
+}
+
+void RenderMenu()
+{
+    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 191, 191, 191));
+    SDL_UpdateWindowSurface(window);
 }
 

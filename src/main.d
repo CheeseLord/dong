@@ -12,6 +12,8 @@ import physics;
 import graphics;
 import observer;
 
+bool inMenu = true;
+
 void main()
 {
     InitGraphics();
@@ -33,16 +35,28 @@ void main()
         // Get the time at which this iteration of the event loop begins.
         MonoTime currStartTime = MonoTime.currTime;
 
-        if (HandleEvents()) {
-            break;
+        if (inMenu) {
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_KEYDOWN) {
+                    inMenu = false;
+                    break;
+                }
+            }
+            RenderMenu();
         }
+        else {
+            if (HandleEvents()) {
+                break;
+            }
 
-        // Update the game state, based on the amount of time elapsed since
-        // the previous event loop iteration.
-        UpdateWorld(currStartTime - prevStartTime);
+            // Update the game state, based on the amount of time elapsed since
+            // the previous event loop iteration.
+            UpdateWorld(currStartTime - prevStartTime);
 
-        // Draw the current game state.
-        RenderGame();
+            // Draw the current game state.
+            RenderGame();
+        }
 
         prevStartTime = currStartTime;
 
