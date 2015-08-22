@@ -11,6 +11,7 @@ import control;
 import physics;
 import graphics;
 import observer;
+import sound;
 
 bool function(Duration elapsedTime) currentStage = &MainMenuFrame;
 
@@ -18,6 +19,9 @@ void main()
 {
     InitGraphics();
     scope (exit) CleanupGraphics();
+
+    InitSound();
+    scope (exit) CleanupSound();
 
     InitGameState();
     InitObservers();
