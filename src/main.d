@@ -52,6 +52,9 @@ void main()
 }
 
 
+// FIXME: These should probably go in another file somewhere. Along with
+// currentStage.
+
 bool GameFrame(Duration elapsedTime)
 {
     if (HandleEvents()) {
@@ -74,12 +77,34 @@ bool MainMenuFrame(Duration elapsedTime)
 
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_KEYDOWN) {
-            currentStage = &GameFrame;
+            if (event.key.keysym.sym == SDLK_p) {
+                currentStage = &GameFrame;
+                break;
+            }
+            else if (event.key.keysym.sym == SDLK_s) {
+                currentStage = &SettingsFrame;
+                break;
+            }
+        }
+    }
+
+    RenderMainMenu();
+
+    return false;
+}
+
+bool SettingsFrame(Duration elapsedTime)
+{
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_KEYDOWN) {
+            currentStage = &MainMenuFrame;
             break;
         }
     }
 
-    RenderMenu();
+    RenderSettingsMenu();
 
     return false;
 }

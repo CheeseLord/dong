@@ -15,7 +15,8 @@ import score;
 private SDL_Window  *window  = null;
 private SDL_Surface *surface = null;
 
-private TTF_Font *font;
+private TTF_Font *scoreFont;
+private TTF_Font *menuFont;
 
 private SDL_Surface *leftScore = null;
 private SDL_Surface *rightScore;
@@ -55,9 +56,10 @@ void InitGraphics()
         cast(int) surface.h  // h
     );
 
-    // Set up the font.
+    // Set up the fonts.
     // TODO: Get default fonts.
-    font = TTF_OpenFont("fonts/UbuntuMono-B.ttf", 72);
+    scoreFont = TTF_OpenFont("fonts/UbuntuMono-B.ttf", 72);
+    menuFont  = TTF_OpenFont("fonts/UbuntuMono-B.ttf", 24);
 }
 
 void CleanupGraphics()
@@ -91,9 +93,11 @@ void RenderGame()
 private void RenderScores()
 {
     SDL_Color scoreColor = {0, 50, 255};
-    leftScore  = TTF_RenderText_Solid(font, toStringz(to!string(scores.left )),
+    leftScore  = TTF_RenderText_Solid(scoreFont,
+                                      toStringz(to!string(scores.left )),
                                       scoreColor);
-    rightScore = TTF_RenderText_Solid(font, toStringz(to!string(scores.right)),
+    rightScore = TTF_RenderText_Solid(scoreFont,
+                                      toStringz(to!string(scores.right)),
                                       scoreColor);
 
     int offset = 200;
@@ -104,7 +108,29 @@ private void RenderScores()
     SDL_BlitSurface(rightScore, null, surface, &rightPosition);
 }
 
-void RenderMenu()
+void RenderMainMenu()
+{
+    SDL_Color textColor = {255, 255, 255};
+
+    SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 0, 0, 0));
+
+    SDL_Surface *textSurf1 = TTF_RenderText_Solid(menuFont,
+        "Press 'p' to begin playing.", textColor);
+    SDL_Surface *textSurf2 = TTF_RenderText_Solid(menuFont,
+        "Press 's' for settings.", textColor);
+
+    // FIXME: Magic numbers bad.
+    SDL_Rect position = {x:50, y:50};
+    SDL_BlitSurface(textSurf1, null, surface, &position);
+
+    // Add a little padding. FIXME: Magic numbers still bad.
+    position.y += textSurf1.h + 8;
+    SDL_BlitSurface(textSurf2, null, surface, &position);
+
+    SDL_UpdateWindowSurface(window);
+}
+
+void RenderSettingsMenu()
 {
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 191, 191, 191));
     SDL_UpdateWindowSurface(window);
