@@ -12,6 +12,8 @@ import physics;
 import graphics;
 import observer;
 
+bool function(Duration elapsedTime) currentStage = &MainMenuFrame;
+
 void main()
 {
     InitGraphics();
@@ -33,16 +35,10 @@ void main()
         // Get the time at which this iteration of the event loop begins.
         MonoTime currStartTime = MonoTime.currTime;
 
-        if (HandleEvents()) {
+        // Carry out one frame of the game or current menu.
+        if (currentStage(currStartTime - prevStartTime)) {
             break;
         }
-
-        // Update the game state, based on the amount of time elapsed since
-        // the previous event loop iteration.
-        UpdateWorld(currStartTime - prevStartTime);
-
-        // Draw the current game state.
-        RenderGame();
 
         prevStartTime = currStartTime;
 
@@ -55,4 +51,69 @@ void main()
     }
 }
 
+
+// FIXME: These should probably go in another file somewhere. Along with
+// currentStage.
+
+bool GameFrame(Duration elapsedTime)
+{
+    if (HandleEvents()) {
+        return true;
+    }
+
+    // Update the game state, based on the amount of time elapsed since
+    // the previous event loop iteration.
+    UpdateWorld(elapsedTime);
+
+    // Draw the current game state.
+    RenderGame();
+
+    return false;
+}
+
+bool MainMenuFrame(Duration elapsedTime)
+{
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
+        if (event.type == SDL_KEYDOWN) {
+            if (event.key.keysym.sym == SDLK_p) {
+                currentStage = &GameFrame;
+                break;
+            }
+            else if (event.key.keysym.sym == SDLK_s) {
+                currentStage = &SettingsFrame;
+                break;
+            }
+        }
+    }
+
+    RenderMainMenu();
+
+    return false;
+}
+
+bool SettingsFrame(Duration elapsedTime)
+{
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
+        if (event.type == SDL_KEYDOWN) {
+            if (event.key.keysym.sym == SDLK_m) {
+                currentStage = &MainMenuFrame;
+                break;
+            }
+        }
+    }
+
+    RenderSettingsMenu();
+
+    return false;
+}
 
