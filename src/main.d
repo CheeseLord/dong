@@ -105,8 +105,10 @@ bool SettingsFrame(Duration elapsedTime)
             return true;
         }
         if (event.type == SDL_KEYDOWN) {
-            currentStage = &MainMenuFrame;
-            break;
+            if (event.key.keysym.sym == SDLK_m) {
+                currentStage = &MainMenuFrame;
+                break;
+            }
         }
     }
 

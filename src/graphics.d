@@ -132,7 +132,17 @@ void RenderMainMenu()
 
 void RenderSettingsMenu()
 {
+    SDL_Color textColor = {0, 0, 0};
+
     SDL_FillRect(surface, null, SDL_MapRGB(surface.format, 191, 191, 191));
+
+    SDL_Surface *textSurf = TTF_RenderText_Solid(menuFont,
+        "Press 'm' to return to main menu.", textColor);
+
+    // FIXME: Magic numbers bad.
+    SDL_Rect position = {x:50, y:50};
+    SDL_BlitSurface(textSurf, null, surface, &position);
+
     SDL_UpdateWindowSurface(window);
 }
 
