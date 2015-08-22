@@ -76,6 +76,9 @@ bool MainMenuFrame(Duration elapsedTime)
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
         if (event.type == SDL_KEYDOWN) {
             if (event.key.keysym.sym == SDLK_p) {
                 currentStage = &GameFrame;
@@ -98,6 +101,9 @@ bool SettingsFrame(Duration elapsedTime)
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
         if (event.type == SDL_KEYDOWN) {
             currentStage = &MainMenuFrame;
             break;
