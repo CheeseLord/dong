@@ -10,7 +10,7 @@ void InitSound()
     for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
         const char *driverName = SDL_GetAudioDriver(i);
         if (SDL_AudioInit(driverName)) {
-            debug writefln("FAILED TO LOAD AUDIO DRIVER %s", driverName);
+            debug printf("FAILED TO LOAD AUDIO DRIVER %s\n", driverName);
         }
     }
 }

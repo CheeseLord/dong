@@ -26,6 +26,22 @@ void main()
     InitGameState();
     InitObservers();
 
+    SDL_AudioSpec fileSpec;
+    ubyte *theBuf;
+    uint   bufLen;
+    if (SDL_LoadWAV("sounds/ding.wav", &fileSpec, &theBuf, &bufLen) is null) {
+        writefln("Failed to open wav file.");
+    }
+    else {
+        SDL_AudioSpec actualSpec;
+        SDL_AudioDeviceID theDevice = SDL_OpenAudioDevice(null, 0, &fileSpec,
+                                                          &actualSpec, 0);
+        SDL_QueueAudio(theDevice, theBuf, bufLen);
+        SDL_PauseAudioDevice(theDevice, 0);
+        SDL_Delay(5000);
+        SDL_FreeWAV(theBuf);
+    }
+
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
 
