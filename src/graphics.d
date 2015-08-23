@@ -25,7 +25,7 @@ void InitGraphics()
 {
     // Set up SDL and TTF.
     DerelictSDL2.load();
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     DerelictSDL2ttf.load();
     TTF_Init();
 

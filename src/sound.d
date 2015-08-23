@@ -4,6 +4,8 @@ import derelict.sdl2.sdl;
 
 import observer;
 
+const(char) *firstAudioDriver = null;
+
 void InitSound()
 {
     // Initialize the drivers.
@@ -11,6 +13,13 @@ void InitSound()
         const char *driverName = SDL_GetAudioDriver(i);
         if (SDL_AudioInit(driverName)) {
             debug printf("FAILED TO LOAD AUDIO DRIVER %s\n", driverName);
+            debug printf("Error details: %s\n", SDL_GetError());
+        }
+        else {
+            debug printf("Successfully loaded audio driver: %s\n", driverName);
+            if (firstAudioDriver is null) {
+                firstAudioDriver = driverName;
+            }
         }
     }
 }

@@ -26,21 +26,31 @@ void main()
     InitGameState();
     InitObservers();
 
-    SDL_AudioSpec fileSpec;
+    SDL_AudioSpec fileSpec = {
+        freq:     48000,
+        format:   AUDIO_F32,
+        channels: 2,
+        samples:  4096,
+        callback: &MyAudioCallback
+    };
+    SDL_AudioSpec actualSpec;
+    SDL_AudioDeviceID theDevice = SDL_OpenAudioDevice(null, 0,
+        &fileSpec, &actualSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    if (theDevice == 0) {
+        printf("Failed to open audio device: %s\n", SDL_GetError());
+    }
     ubyte *theBuf;
     uint   bufLen;
     if (SDL_LoadWAV("sounds/ding.wav", &fileSpec, &theBuf, &bufLen) is null) {
-        writefln("Failed to open wav file.");
+        writefln("Failed to open wav file: %s\n", SDL_GetError());
     }
-    else {
-        SDL_AudioSpec actualSpec;
-        SDL_AudioDeviceID theDevice = SDL_OpenAudioDevice(null, 0, &fileSpec,
-                                                          &actualSpec, 0);
-        SDL_QueueAudio(theDevice, theBuf, bufLen);
-        SDL_PauseAudioDevice(theDevice, 0);
-        SDL_Delay(5000);
-        SDL_FreeWAV(theBuf);
-    }
+    writefln("device: %s, buf: %s, bufLen: %s", theDevice, theBuf, bufLen);
+    SDL_QueueAudio(theDevice, theBuf, bufLen);
+    writefln("Queued.");
+    SDL_PauseAudioDevice(theDevice, 0);
+    writefln("Unpaused.");
+    SDL_Delay(5000);
+    SDL_FreeWAV(theBuf);
 
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
@@ -135,5 +145,10 @@ bool SettingsFrame(Duration elapsedTime)
     RenderSettingsMenu();
 
     return false;
+}
+
+extern (C) void MyAudioCallback(void* userdata, ubyte* stream, int len) nothrow
+{
+    // Whatever.
 }
 
