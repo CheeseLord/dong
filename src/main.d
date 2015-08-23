@@ -23,6 +23,9 @@ shared uint audio_len; // remaining length of the sample we have to play
 
 void main()
 {
+    // Current code stolen from
+    //     https://gist.github.com/armornick/3447121
+
     DerelictSDL2.load();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
