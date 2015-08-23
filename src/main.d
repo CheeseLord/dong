@@ -3,8 +3,10 @@ import std.stdio;
 
 import core.time;
 import core.thread;
+import core.atomic;
 
 import derelict.sdl2.sdl;
+import derelict.sdl2.mixer;
 
 import gamestate;
 import control;
@@ -15,8 +17,63 @@ import sound;
 
 bool function(Duration elapsedTime) currentStage = &MainMenuFrame;
 
+// variable declarations
+shared ubyte *audio_pos; // global pointer to the audio buffer to be played
+shared uint audio_len; // remaining length of the sample we have to play
+
 void main()
 {
+    DerelictSDL2.load();
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+
+    // local variables
+    uint wav_length; // length of our sample
+    ubyte *wav_buffer; // buffer containing our audio file
+    SDL_AudioSpec wav_spec; // the specs of our piece of music
+
+    writefln("Starting.");
+
+    /* Load the WAV */
+    // the specs, length and buffer of our wav are filled
+    if( SDL_LoadWAV("sounds/ding.wav", &wav_spec, &wav_buffer, &wav_length) is null ){
+        writefln("Failed to load WAV.");
+        return;
+    }
+    writefln("Loaded WAV.");
+    // set the callback function
+    wav_spec.callback = &my_audio_callback;
+    wav_spec.userdata = null;
+    // set our global static variables
+    audio_pos = cast(shared ubyte*)(wav_buffer); // copy sound buffer
+    audio_len = cast(shared uint)(wav_length); // copy file length
+
+    /* Open the audio device */
+    if ( SDL_OpenAudio(&wav_spec, null) < 0 ){
+        printf("Couldn't open audio: %s\n", SDL_GetError());
+        return;
+    }
+    writefln("Opened audio.");
+
+    /* Start playing */
+    SDL_PauseAudio(0);
+    writefln("Unpaused audio.");
+
+    // wait until we're don't playing
+    while ( audio_len > 0 ) {
+        writefln("Playing audio...");
+        SDL_Delay(100);
+    }
+
+    writefln("Okay, we should be done here.");
+
+    // shut everything down
+    SDL_CloseAudio();
+    SDL_FreeWAV(wav_buffer);
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+version (UseSDLMixer) {
     InitGraphics();
     scope (exit) CleanupGraphics();
 
@@ -26,6 +83,45 @@ void main()
     InitGameState();
     InitObservers();
 
+    int audio_rate = 22050;
+    Uint16 audio_format = AUDIO_S16SYS;
+    int audio_channels = 2;
+    int audio_buffers = 4096;
+
+    writefln("test 1");
+
+    if(Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) != 0) {
+        printf("Unable to initialize audio: %s\n", Mix_GetError());
+        return;
+    }
+
+    writefln("test 2");
+
+    Mix_Chunk *sound = Mix_LoadWAV("sounds/ding.wav");
+    if (sound is null) {
+        printf("Unable to load WAV file: %s\n", Mix_GetError());
+        return;
+    }
+
+    writefln("test 3");
+
+    int channel = Mix_PlayChannel(-1, sound, 0);
+    if(channel == -1) {
+        printf("Unable to play WAV file: %s\n", Mix_GetError());
+    }
+
+    writefln("test 4");
+
+    while (Mix_Playing(channel) != 0) {}
+    Mix_FreeChunk(sound);
+    Mix_CloseAudio();
+}
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+version(TryItOurselves) {
     SDL_AudioSpec fileSpec = {
         freq:     48000,
         format:   AUDIO_F32,
@@ -44,14 +140,27 @@ void main()
     if (SDL_LoadWAV("sounds/ding.wav", &fileSpec, &theBuf, &bufLen) is null) {
         writefln("Failed to open wav file: %s\n", SDL_GetError());
     }
+    // writef("Contents of buffer: [");
+    // for (int i=0; i < bufLen; i++) {
+    //     writef("%d, ", theBuf[i]);
+    // }
+    // writefln("]");
     writefln("device: %s, buf: %s, bufLen: %s", theDevice, theBuf, bufLen);
-    SDL_QueueAudio(theDevice, theBuf, bufLen);
-    writefln("Queued.");
+    // writefln("Okay, gonna try queuing.");
+    // SDL_QueueAudio(theDevice, theBuf, bufLen);
+    // writefln("Queued.");
+    writefln("Okay, gonna try playing.");
     SDL_PauseAudioDevice(theDevice, 0);
     writefln("Unpaused.");
     SDL_Delay(5000);
     SDL_FreeWAV(theBuf);
+}
+///////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Disable this for now because it might mess with the audio code.
+version (none) {
     // The time at which the previous iteration of the event loop began.
     MonoTime prevStartTime = MonoTime.currTime;
 
@@ -79,6 +188,9 @@ void main()
         if (!timeToSleep.isNegative)
             Thread.sleep(timeToSleep);
     }
+}
+///////////////////////////////////////////////////////////////////////////////
+
 }
 
 
@@ -149,6 +261,46 @@ bool SettingsFrame(Duration elapsedTime)
 
 extern (C) void MyAudioCallback(void* userdata, ubyte* stream, int len) nothrow
 {
-    // Whatever.
+    for (int i=0; i<len; i++) {
+        if (i % 8192 < 4096) {
+            stream[i] = 0;
+        }
+        else {
+            stream[i] = 255;
+        }
+    }
+    // try {
+    //     writefln("Enter callback.");
+    // } catch { /* Quack. */ }
+    // for (int i=0; i<len; i++) {
+    //     stream[i] = 0;
+    // }
+    // try {
+    //     writefln("Leave callback.");
+    // } catch { /* Quack. */ }
+}
+
+
+// audio callback function
+// here you have to copy the data of your audio buffer into the
+// requesting audio buffer (stream)
+// you should only copy as much as the requested length (len)
+extern (C) void my_audio_callback(void *userdata, ubyte *stream, int len) nothrow {
+    try {
+        writefln("Callback. len=%s, audio_len=%s", len, audio_len);
+    } catch {}
+
+    if (audio_len ==0)
+        return;
+
+    len = ( len > audio_len ? audio_len : len );
+    try {
+        writefln("    stream=%s, audio_pos=%s, len=%s", stream, audio_pos, len);
+    } catch {}
+    //SDL_memcpy (stream, audio_pos, len);                  // simply copy from one buffer into the other
+    SDL_MixAudio(stream, cast(ubyte*)(audio_pos), len, SDL_MIX_MAXVOLUME);// mix from one buffer into another
+
+    core.atomic.atomicOp!"+="(audio_pos, len);
+    core.atomic.atomicOp!"-="(audio_len, len);
 }
 
