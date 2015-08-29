@@ -20,6 +20,7 @@ bool function(Duration elapsedTime) currentStage = &MainMenuFrame;
 // variable declarations
 shared ubyte *audio_pos; // global pointer to the audio buffer to be played
 shared uint audio_len; // remaining length of the sample we have to play
+shared SDL_AudioFormat actualFormat;
 
 void main()
 {
@@ -51,17 +52,21 @@ void main()
     audio_len = cast(shared uint)(wav_length); // copy file length
 
     /* Open the audio device */
-    if ( SDL_OpenAudio(&wav_spec, null) < 0 ){
+    SDL_AudioSpec actualSpec;
+    SDL_AudioDeviceID devId = SDL_OpenAudioDevice(null, false, &wav_spec, &actualSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    if (devId <= 0){
         printf("Couldn't open audio: %s\n", SDL_GetError());
         return;
     }
     writefln("Opened audio.");
 
+    actualFormat = actualSpec.format;
+
     /* Start playing */
-    SDL_PauseAudio(0);
+    SDL_PauseAudioDevice(devId, 0);
     writefln("Unpaused audio.");
 
-    // wait until we're don't playing
+    // wait until we're done playing
     while ( audio_len > 0 ) {
         writefln("Playing audio...");
         SDL_Delay(100);
@@ -293,17 +298,27 @@ extern (C) void my_audio_callback(void *userdata, ubyte *stream, int len) nothro
         writefln("Callback. len=%s, audio_len=%s", len, audio_len);
     } catch {}
 
-    if (audio_len ==0)
-        return;
+    // if (audio_len ==0)
+    //     return;
 
-    len = ( len > audio_len ? audio_len : len );
+    int neededLen = ( len > audio_len ? audio_len : len );
     try {
         writefln("    stream=%s, audio_pos=%s, len=%s", stream, audio_pos, len);
     } catch {}
-    //SDL_memcpy (stream, audio_pos, len);                  // simply copy from one buffer into the other
-    SDL_MixAudio(stream, cast(ubyte*)(audio_pos), len, SDL_MIX_MAXVOLUME);// mix from one buffer into another
+    memcpy(cast(void*)(stream), cast(const(void)*)(audio_pos), neededLen);
+    //SDL_MixAudioFormat(stream, cast(ubyte*)(audio_pos), actualFormat, neededLen, SDL_MIX_MAXVOLUME);// mix from one buffer into another
+    if (neededLen < len) {
+        memset(cast(void*)(stream + neededLen), 0, len - neededLen);
+        try {
+            writefln("    memsetting");
+        } catch {}
+    }
 
-    core.atomic.atomicOp!"+="(audio_pos, len);
-    core.atomic.atomicOp!"-="(audio_len, len);
+    core.atomic.atomicOp!"+="(audio_pos, neededLen);
+    core.atomic.atomicOp!"-="(audio_len, neededLen);
 }
+
+// Does this work???
+extern (C) void * memset(void *s, int c, size_t n) nothrow;
+extern (C) void * memcpy(void *dest, const(void)* src, size_t n) nothrow;
 
