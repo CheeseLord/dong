@@ -12,8 +12,10 @@ import physics;
 import graphics;
 import observer;
 import sound;
+import score;
 
 bool function(Duration elapsedTime) currentStage = &MainMenuFrame;
+string winMessage;
 
 void main()
 {
@@ -119,5 +121,36 @@ bool SettingsFrame(Duration elapsedTime)
     RenderSettingsMenu();
 
     return false;
+}
+
+bool WinFrame(Duration elapsedTime)
+{
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return true;
+        }
+    }
+
+    RenderWinMenu(winMessage);
+
+    return false;
+}
+
+void WinGame(NotifyType eventInfo)
+{
+    if (eventInfo == NotifyType.LEFT_PLAYER_WIN)
+    {
+        winMessage = "Left player won!";
+        debug writefln(winMessage);
+        currentStage = &WinFrame;
+    }
+    else if (eventInfo == NotifyType.RIGHT_PLAYER_WIN)
+    {
+        winMessage = "Right player won!";
+        debug writefln(winMessage);
+        currentStage = &WinFrame;
+    }
 }
 

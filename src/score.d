@@ -25,6 +25,8 @@ void OnBallPass(NotifyType eventInfo)
 private struct Scores
 {
     int left, right;
+    // TODO: If I were a better person, this could be set elsewhere.
+    int maxScore = 3;
 
     void Reset()
     {
@@ -35,11 +37,19 @@ private struct Scores
     void LeftPlayerScore()
     {
         left += 1;
+        if (left >= maxScore)
+        {
+            observers.Notify(NotifyType.LEFT_PLAYER_WIN);
+        }
     }
 
     void RightPlayerScore()
     {
         right += 1;
+        if (right >= maxScore)
+        {
+            observers.Notify(NotifyType.RIGHT_PLAYER_WIN);
+        }
     }
 }
 
