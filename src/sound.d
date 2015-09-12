@@ -13,6 +13,16 @@ import derelict.sdl2.sdl;
 import observer;
 
 
+/* *** IMPORTANT NOTE ***
+ *
+ * Any time you call a method of AudioManager when the audio device is (or
+ * might be) playing, you must first lock the audio device. Otherwise horrible
+ * race conditions will happen, and you will be a sad panda.
+ *
+ * If you call a method of AudioManager from inside the audio callback, then
+ * you don't need to worry about this because the device will already be locked
+ * by the audio thread.
+ */
 class AudioManager {
     private const(ubyte)[] audioBuffer_;
     private ulong          audioPos_;
@@ -28,6 +38,15 @@ class AudioManager {
         audioBuffer_.length = bufferLength;
         memcpy(cast(void*)(audioBuffer_.ptr), cast(const(void)*)(buffer),
                cast(size_t)(bufferLength));
+
+        // So we don't start playing immediately.
+        audioPos_           = bufferLength;
+    }
+
+    // Do this the easy way for now. Don't try to handle simultaneous playback.
+    void Restart() shared nothrow
+    {
+        audioPos_ = 0;
     }
 
     void ConsumeBuffer(ulong usedLength) shared nothrow
@@ -42,6 +61,8 @@ class AudioManager {
 }
 
 private shared(AudioManager) audioManager;
+
+private SDL_AudioDeviceID audioDeviceId;
 
 
 void InitSound()
@@ -80,22 +101,22 @@ void InitSound()
 
     audioSpec.callback = &AudioCallback;
 
-    SDL_AudioDeviceID devId = SDL_OpenAudioDevice(null, false, &audioSpec,
+    audioDeviceId = SDL_OpenAudioDevice(null, false, &audioSpec,
         null, SDL_AUDIO_ALLOW_ANY_CHANGE);
-    SDL_PauseAudioDevice(devId, false);
+    SDL_PauseAudioDevice(audioDeviceId, false);
 
-    // TODO: I don't want to just block here, but we really should add a call
-    // to SDL_PauseAudioDevice(devId, true) after we finish playing the last
-    // chunk so we don't keep needlessly calling the callback and loading
-    // silence into the buffer. Maybe we could call PauseAudioDevice from the
-    // callback, when the remaining buffer length is zero?
+    // Note: I think if you call SDL_PauseAudioDevice, then SDL keeps loading
+    // silence into the stream behind the scenes, just without calling your
+    // callback. If I'm correct about that, then we don't really gain anything
+    // by calling SDL_PauseAudioDevice when we're not actively playing
+    // anything.
     version(none) {
         while (audioManager.GetRemainingBuffer().length > 0) {
             writefln("Still playing...");
             SDL_Delay(100);
         }
 
-        SDL_PauseAudioDevice(devId, true);
+        SDL_PauseAudioDevice(audioDeviceId, true);
     }
 }
 
@@ -122,11 +143,16 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
     // We know len > 0, so a cast to unsigned is safe.
     ulong lenToUse = min(audioBuffer.length, cast(ulong)(len));
 
-    try {
-        writefln("Loading audio from 0x%s.", audioBuffer.ptr);
-        writefln("    Requested len: %s of %s; using %s.",
-                 len, audioBuffer.length, lenToUse);
-    } catch {}
+    debug {
+        // Suppress debug output if nothing to write.
+        if (lenToUse > 0) {
+            try {
+                writefln("Loading audio from 0x%s.", audioBuffer.ptr);
+                writefln("    Requested len: %s of %s; using %s.",
+                         len, audioBuffer.length, lenToUse);
+            } catch {}
+        }
+    }
 
     // TODO: Use SDL_MixAudioFormat? We'll need to zero the stream first, I
     // think.
@@ -148,19 +174,21 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
 void OnBallPass(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_PASS_LEFT) {
-        debug writefln("Ding: Passed left.");
+        debug writefln("Whoosh! Passed left.");
     }
     else if (eventInfo == NotifyType.BALL_PASS_RIGHT) {
-        debug writefln("Ding: Passed right.");
+        debug writefln("Whoosh! Passed right.");
     }
 }
 
 void HitPaddle(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_BOUNCE_LEFT_PADDLE) {
-        debug writefln("Dong: Bounced off of left paddle.");
+        RestartSound();
+        debug writefln("Ding: Bounced off of left paddle.");
     }
     else if (eventInfo == NotifyType.BALL_BOUNCE_RIGHT_PADDLE) {
+        RestartSound();
         debug writefln("Dong: Bounced off of right paddle.");
     }
 }
@@ -168,10 +196,21 @@ void HitPaddle(NotifyType eventInfo)
 void HitWall(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_BOUNCE_BOTTOM_WALL) {
-        debug writefln("Dong: Bounced off of bottom wall.");
+        RestartSound();
+        debug writefln("Dang: Bounced off of bottom wall.");
     }
     else if (eventInfo == NotifyType.BALL_BOUNCE_TOP_WALL) {
-        debug writefln("Dong: Bounced off of top wall.");
+        RestartSound();
+        debug writefln("Dang: Bounced off of top wall.");
     }
+
+}
+
+
+private void RestartSound()
+{
+    SDL_LockAudioDevice(audioDeviceId);
+    audioManager.Restart();
+    SDL_UnlockAudioDevice(audioDeviceId);
 }
 

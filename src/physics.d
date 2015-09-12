@@ -120,14 +120,21 @@ void BounceWall(Entity entity, BounceDirection bounceDir)
     // direction because the ball bounces inward, so (for example) if it
     // bounces to the right, then it's bouncing at the left edge of the field.
     switch (bounceDir) {
-        case BounceDirection.LEFT:
-            observers.Notify(NotifyType.BALL_BOUNCE_RIGHT_PADDLE);
-            entity.xVel = - abs(entity.xVel);
-            break;
-        case BounceDirection.RIGHT:
-            observers.Notify(NotifyType.BALL_BOUNCE_LEFT_PADDLE);
-            entity.xVel = + abs(entity.xVel);
-            break;
+        version (none) {
+            case BounceDirection.LEFT:
+                observers.Notify(NotifyType.BALL_BOUNCE_RIGHT_PADDLE);
+                entity.xVel = - abs(entity.xVel);
+                break;
+            case BounceDirection.RIGHT:
+                observers.Notify(NotifyType.BALL_BOUNCE_LEFT_PADDLE);
+                entity.xVel = + abs(entity.xVel);
+                break;
+        }
+        else {
+            case BounceDirection.LEFT:
+            case BounceDirection.RIGHT:
+                assert(false);
+        }
         case BounceDirection.UP:
             observers.Notify(NotifyType.BALL_BOUNCE_BOTTOM_WALL);
             entity.yVel = - abs(entity.yVel);
@@ -231,6 +238,17 @@ void BouncePaddle(Entity entity, WorldRect obstacle, BounceDirection bounceDir)
 
     entity.xVel = finalSpeed * cos(finalAngle);
     entity.yVel = finalSpeed * sin(finalAngle);
+
+    // Send a notification, so sounds and such work.
+    switch(bounceDir) {
+        case BounceDirection.RIGHT:
+            observers.Notify(NotifyType.BALL_BOUNCE_LEFT_PADDLE);
+            break;
+        case BounceDirection.LEFT:
+            observers.Notify(NotifyType.BALL_BOUNCE_RIGHT_PADDLE);
+            break;
+        default: assert(false); // Vertical play not supported yet.
+    }
 }
 
 /**
