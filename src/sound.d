@@ -12,11 +12,37 @@ import derelict.sdl2.sdl;
 
 import observer;
 
-// The audio playback is done in another thread, so these need to be shared.
-private shared const(ubyte)* audioBuffer;
-private shared uint          audioBufferLength;
 
-private shared const(ubyte)* audioPos;
+class AudioManager {
+    private const(ubyte)[] audioBuffer_;
+    private ulong          audioPos_;
+
+    this() shared
+    {
+        audioBuffer_ = [];
+        audioPos_    = 0;
+    }
+
+    void SetBuffer(const(ubyte)* buffer, ulong bufferLength) shared nothrow
+    {
+        audioBuffer_.length = bufferLength;
+        memcpy(cast(void*)(audioBuffer_.ptr), cast(const(void)*)(buffer),
+               cast(size_t)(bufferLength));
+    }
+
+    void ConsumeBuffer(ulong usedLength) shared nothrow
+    {
+        audioPos_ = min(audioPos_ + usedLength, audioBuffer_.length);
+    }
+
+    shared(const(ubyte)[]) GetRemainingBuffer() shared nothrow
+    {
+        return audioBuffer_[audioPos_..$];
+    }
+}
+
+private shared(AudioManager) audioManager;
+
 
 void InitSound()
 {
@@ -32,6 +58,8 @@ void InitSound()
         }
     }
 
+    audioManager = new shared(AudioManager)();
+
     SDL_AudioSpec audioSpec;
     ubyte*        myAudioBuffer;
     uint          myAudioBufferLength;
@@ -44,11 +72,12 @@ void InitSound()
         return;
     }
 
-    audioBuffer       = cast(shared)(myAudioBuffer);
-    audioBufferLength = cast(shared)(myAudioBufferLength);
-
     // TODO: Use userdata?
-    audioPos           = audioBuffer;
+    //     ... for what? It's not going to get around the fact that there's
+    //     data being shared between threads.
+    audioManager.SetBuffer(myAudioBuffer, myAudioBufferLength);
+    SDL_FreeWAV(cast(ubyte*) myAudioBuffer);
+
     audioSpec.callback = &AudioCallback;
 
     SDL_AudioDeviceID devId = SDL_OpenAudioDevice(null, false, &audioSpec,
@@ -61,7 +90,7 @@ void InitSound()
     // silence into the buffer. Maybe we could call PauseAudioDevice from the
     // callback, when the remaining buffer length is zero?
     version(none) {
-        while (audioPos - audioBuffer < audioBufferLength) {
+        while (audioManager.GetRemainingBuffer().length > 0) {
             writefln("Still playing...");
             SDL_Delay(100);
         }
@@ -73,12 +102,12 @@ void InitSound()
 void CleanupSound()
 {
     SDL_CloseAudio();
-    SDL_FreeWAV(cast(ubyte*) audioBuffer);
-
     SDL_AudioQuit();
 }
 
 
+// D "int" isn't really always the same as C "int" but I can't figure out how
+// to get a native-sized int, so whatever.
 extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
 {
     // I don't know if it's necessary to check if len is negative (hopefully
@@ -88,30 +117,30 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
         return;
     }
 
-    // TODO: Someone should code-review this cast(uint).
-    uint availableLen = audioBufferLength - cast(uint)(audioPos - audioBuffer);
+    shared(const(ubyte)[]) audioBuffer = audioManager.GetRemainingBuffer();
 
-    // D uses the same stupid silently-promote-signed-to-unsigned rule as C, so
-    // the cast isn't strictly necessary here, but I think it makes the code
-    // easier to read.
-    uint lenToUse = min(cast(uint)(len), availableLen);
+    // We know len > 0, so a cast to unsigned is safe.
+    ulong lenToUse = min(audioBuffer.length, cast(ulong)(len));
 
     try {
-        writefln("Loading audio from %s.", audioPos);
-        writefln("    Requested len: %s of %s; using %s.", len, availableLen,
-                 lenToUse);
+        writefln("Loading audio from 0x%s.", audioBuffer.ptr);
+        writefln("    Requested len: %s of %s; using %s.",
+                 len, audioBuffer.length, lenToUse);
     } catch {}
 
     // TODO: Use SDL_MixAudioFormat? We'll need to zero the stream first, I
     // think.
-    memcpy(cast(void*)(stream), cast(const(void)*)(audioPos), lenToUse);
+    memcpy(cast(void*)(stream), cast(const(void)*)(audioBuffer.ptr),
+           cast(size_t)(lenToUse));
 
-    if (lenToUse < cast(uint)(len)) {
+    if (lenToUse < cast(ulong)(len)) {
         // Fill the rest of the stream with silence.
-        memset(cast(void*)(stream + lenToUse), 0, cast(uint)(len) - lenToUse);
+        // TODO: Fewer casts plz? Kthx.
+        memset(cast(void*)(stream + lenToUse), 0,
+               cast(size_t)(cast(ulong)(len) - lenToUse));
     }
 
-    core.atomic.atomicOp!"+="(audioPos, lenToUse);
+    audioManager.ConsumeBuffer(lenToUse);
 }
 
 
