@@ -17,7 +17,7 @@ import observer;
 enum Track: ulong {DING = 0, DONG = 1, DANG = 2};
 
 struct AudioTrackPosition {
-    ulong trackIndex;
+    long trackIndex; // -1 means don't play anything.
     ulong bufferPos;
 }
 
@@ -34,13 +34,14 @@ struct AudioTrackPosition {
 class AudioManager {
     private const(ubyte)[][]     tracks_;
 
-    // In a real game, this would be of bounded length.
-    private AudioTrackPosition[] nowPlaying_;
+    // Ideally, this would be a list of bounded (>1) length. But mixing audio
+    // is hard. So instead, we just only play the most recent one.
+    private AudioTrackPosition nowPlaying_;
 
     this() shared
     {
         tracks_     = [];
-        nowPlaying_ = [];
+        nowPlaying_ = AudioTrackPosition(-1, 0);
     }
 
     // Returns the index of the added track.
@@ -59,29 +60,29 @@ class AudioManager {
     // Do this the easy way for now. Don't try to handle simultaneous playback.
     void PlayTrack(ulong trackIndex) shared nothrow
     {
-        nowPlaying_ ~= AudioTrackPosition(trackIndex, 0);
+        nowPlaying_ = AudioTrackPosition(trackIndex, 0);
     }
 
     void ConsumeBuffer(ulong usedLength) shared nothrow
     {
-        if (nowPlaying_.length > 0) {
-            auto track = tracks_[nowPlaying_[0].trackIndex];
-            core.atomic.atomicOp!"+="(nowPlaying_[0].bufferPos, usedLength);
-            if (nowPlaying_[0].bufferPos >= track.length) {
-                // Finished playing this track; remove it.
-                nowPlaying_ = nowPlaying_[1..$];
+        if (nowPlaying_.trackIndex >= 0) {
+            auto track = tracks_[nowPlaying_.trackIndex];
+            core.atomic.atomicOp!"+="(nowPlaying_.bufferPos, usedLength);
+            if (nowPlaying_.bufferPos >= track.length) {
+                // Finished this track; stop playing.
+                nowPlaying_.trackIndex = -1;
             }
         }
     }
 
     shared(const(ubyte)[]) GetRemainingBuffer() shared nothrow
     {
-        if (nowPlaying_.length == 0) {
+        if (nowPlaying_.trackIndex < 0) {
             return [];
         }
 
-        auto track = tracks_[nowPlaying_[0].trackIndex];
-        return track[nowPlaying_[0].bufferPos..$];
+        auto track = tracks_[nowPlaying_.trackIndex];
+        return track[nowPlaying_.bufferPos..$];
     }
 }
 
