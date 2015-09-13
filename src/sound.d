@@ -1,5 +1,6 @@
 import std.stdio;
 import std.algorithm: min;
+import std.typecons:  tuple;
 
 // It's unfortunate that we have to use the unsafe C functions rather than D
 // array operations, but since we need to copy data into an array that's passed
@@ -12,11 +13,82 @@ import derelict.sdl2.sdl;
 
 import observer;
 
-// The audio playback is done in another thread, so these need to be shared.
-private shared const(ubyte)* audioBuffer;
-private shared uint          audioBufferLength;
 
-private shared const(ubyte)* audioPos;
+enum Track: ulong {DING = 0, DONG = 1, DANG = 2};
+
+struct AudioTrackPosition {
+    ulong trackIndex;
+    ulong bufferPos;
+}
+
+/* *** IMPORTANT NOTE ***
+ *
+ * Any time you call a method of AudioManager when the audio device is (or
+ * might be) playing, you must first lock the audio device. Otherwise horrible
+ * race conditions will happen, and you will be a sad panda.
+ *
+ * If you call a method of AudioManager from inside the audio callback, then
+ * you don't need to worry about this because the device will already be locked
+ * by the audio thread.
+ */
+class AudioManager {
+    private const(ubyte)[][]     tracks_;
+
+    // In a real game, this would be of bounded length.
+    private AudioTrackPosition[] nowPlaying_;
+
+    this() shared
+    {
+        tracks_     = [];
+        nowPlaying_ = [];
+    }
+
+    // Returns the index of the added track.
+    ulong AddTrack(const(ubyte)* buffer, ulong bufferLength) shared nothrow
+    {
+        shared(const(ubyte)[]) track;
+        track.length = bufferLength;
+        memcpy(cast(void*)(track.ptr), cast(const(void)*)(buffer),
+               cast(size_t)(bufferLength));
+
+        tracks_ ~= track;
+
+        return tracks_.length - 1;
+    }
+
+    // Do this the easy way for now. Don't try to handle simultaneous playback.
+    void PlayTrack(ulong trackIndex) shared nothrow
+    {
+        nowPlaying_ ~= AudioTrackPosition(trackIndex, 0);
+    }
+
+    void ConsumeBuffer(ulong usedLength) shared nothrow
+    {
+        if (nowPlaying_.length > 0) {
+            auto track = tracks_[nowPlaying_[0].trackIndex];
+            core.atomic.atomicOp!"+="(nowPlaying_[0].bufferPos, usedLength);
+            if (nowPlaying_[0].bufferPos >= track.length) {
+                // Finished playing this track; remove it.
+                nowPlaying_ = nowPlaying_[1..$];
+            }
+        }
+    }
+
+    shared(const(ubyte)[]) GetRemainingBuffer() shared nothrow
+    {
+        if (nowPlaying_.length == 0) {
+            return [];
+        }
+
+        auto track = tracks_[nowPlaying_[0].trackIndex];
+        return track[nowPlaying_[0].bufferPos..$];
+    }
+}
+
+private shared(AudioManager) audioManager;
+
+private SDL_AudioDeviceID audioDeviceId;
+
 
 void InitSound()
 {
@@ -32,53 +104,68 @@ void InitSound()
         }
     }
 
+    audioManager = new shared(AudioManager)();
+
     SDL_AudioSpec audioSpec;
     ubyte*        myAudioBuffer;
     uint          myAudioBufferLength;
 
-    // FIXME: Magic string bad
-    if (SDL_LoadWAV("sounds/ding.wav", &audioSpec,
-                    &myAudioBuffer, &myAudioBufferLength) is null) {
-        printf("ERROR: Failed to open audio file: %s\n", SDL_GetError());
-        // FIXME: Raise exception here.
-        return;
+    // FIXME: Magic strings still kinda bad?
+    alias SoundAndFile = tuple!("expectedIndex", "filename");
+    auto soundsToLoad = [
+        SoundAndFile(Track.DING, cast(const char *)("sounds/ding.wav")),
+        SoundAndFile(Track.DONG, cast(const char *)("sounds/dong.wav")),
+        SoundAndFile(Track.DANG, cast(const char *)("sounds/dang.wav"))
+    ];
+
+    foreach (sound; soundsToLoad) {
+        if (SDL_LoadWAV(sound.filename, &audioSpec,
+                        &myAudioBuffer, &myAudioBufferLength) is null) {
+            printf(`ERROR: Failed to open audio file "%s": %s\n`,
+                   sound.filename, SDL_GetError());
+            // FIXME: Raise exception here.
+            return;
+        }
+
+        if (audioManager.AddTrack(myAudioBuffer, myAudioBufferLength) !=
+                sound.expectedIndex) {
+            writefln("ERROR: Audio files loaded in wrong order.");
+            assert(false);
+        }
+
+        SDL_FreeWAV(cast(ubyte*) myAudioBuffer);
     }
 
-    audioBuffer       = cast(shared)(myAudioBuffer);
-    audioBufferLength = cast(shared)(myAudioBufferLength);
-
-    // TODO: Use userdata?
-    audioPos           = audioBuffer;
     audioSpec.callback = &AudioCallback;
 
-    SDL_AudioDeviceID devId = SDL_OpenAudioDevice(null, false, &audioSpec,
+    audioDeviceId = SDL_OpenAudioDevice(null, false, &audioSpec,
         null, SDL_AUDIO_ALLOW_ANY_CHANGE);
-    SDL_PauseAudioDevice(devId, false);
+    SDL_PauseAudioDevice(audioDeviceId, false);
 
-    // TODO: I don't want to just block here, but we really should add a call
-    // to SDL_PauseAudioDevice(devId, true) after we finish playing the last
-    // chunk so we don't keep needlessly calling the callback and loading
-    // silence into the buffer. Maybe we could call PauseAudioDevice from the
-    // callback, when the remaining buffer length is zero?
+    // Note: I think if you call SDL_PauseAudioDevice, then SDL keeps loading
+    // silence into the stream behind the scenes, just without calling your
+    // callback. If I'm correct about that, then we don't really gain anything
+    // by calling SDL_PauseAudioDevice when we're not actively playing
+    // anything.
     version(none) {
-        while (audioPos - audioBuffer < audioBufferLength) {
+        while (audioManager.GetRemainingBuffer().length > 0) {
             writefln("Still playing...");
             SDL_Delay(100);
         }
 
-        SDL_PauseAudioDevice(devId, true);
+        SDL_PauseAudioDevice(audioDeviceId, true);
     }
 }
 
 void CleanupSound()
 {
     SDL_CloseAudio();
-    SDL_FreeWAV(cast(ubyte*) audioBuffer);
-
     SDL_AudioQuit();
 }
 
 
+// D "int" isn't really always the same as C "int" but I can't figure out how
+// to get a native-sized int, so whatever.
 extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
 {
     // I don't know if it's necessary to check if len is negative (hopefully
@@ -88,30 +175,35 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
         return;
     }
 
-    // TODO: Someone should code-review this cast(uint).
-    uint availableLen = audioBufferLength - cast(uint)(audioPos - audioBuffer);
+    shared(const(ubyte)[]) audioBuffer = audioManager.GetRemainingBuffer();
 
-    // D uses the same stupid silently-promote-signed-to-unsigned rule as C, so
-    // the cast isn't strictly necessary here, but I think it makes the code
-    // easier to read.
-    uint lenToUse = min(cast(uint)(len), availableLen);
+    // We know len > 0, so a cast to unsigned is safe.
+    ulong lenToUse = min(audioBuffer.length, cast(ulong)(len));
 
-    try {
-        writefln("Loading audio from %s.", audioPos);
-        writefln("    Requested len: %s of %s; using %s.", len, availableLen,
-                 lenToUse);
-    } catch {}
+    debug {
+        // Suppress debug output if nothing to write.
+        if (lenToUse > 0) {
+            try {
+                writefln("Loading audio from 0x%s.", audioBuffer.ptr);
+                writefln("    Requested len: %s of %s; using %s.",
+                         len, audioBuffer.length, lenToUse);
+            } catch {}
+        }
+    }
 
     // TODO: Use SDL_MixAudioFormat? We'll need to zero the stream first, I
     // think.
-    memcpy(cast(void*)(stream), cast(const(void)*)(audioPos), lenToUse);
+    memcpy(cast(void*)(stream), cast(const(void)*)(audioBuffer.ptr),
+           cast(size_t)(lenToUse));
 
-    if (lenToUse < cast(uint)(len)) {
+    if (lenToUse < cast(ulong)(len)) {
         // Fill the rest of the stream with silence.
-        memset(cast(void*)(stream + lenToUse), 0, cast(uint)(len) - lenToUse);
+        // TODO: Fewer casts plz? Kthx.
+        memset(cast(void*)(stream + lenToUse), 0,
+               cast(size_t)(cast(ulong)(len) - lenToUse));
     }
 
-    core.atomic.atomicOp!"+="(audioPos, lenToUse);
+    audioManager.ConsumeBuffer(lenToUse);
 }
 
 
@@ -119,30 +211,43 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
 void OnBallPass(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_PASS_LEFT) {
-        debug writefln("Ding: Passed left.");
+        debug writefln("Whoosh! Passed left.");
     }
     else if (eventInfo == NotifyType.BALL_PASS_RIGHT) {
-        debug writefln("Ding: Passed right.");
+        debug writefln("Whoosh! Passed right.");
     }
 }
 
 void HitPaddle(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_BOUNCE_LEFT_PADDLE) {
-        debug writefln("Dong: Bounced off of left paddle.");
+        debug writefln("Ding: Bounced off of left paddle.");
+        PlaySound(Track.DING);
     }
     else if (eventInfo == NotifyType.BALL_BOUNCE_RIGHT_PADDLE) {
         debug writefln("Dong: Bounced off of right paddle.");
+        PlaySound(Track.DONG);
     }
 }
 
 void HitWall(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_BOUNCE_BOTTOM_WALL) {
-        debug writefln("Dong: Bounced off of bottom wall.");
+        debug writefln("Dang: Bounced off of bottom wall.");
+        PlaySound(Track.DANG);
     }
     else if (eventInfo == NotifyType.BALL_BOUNCE_TOP_WALL) {
-        debug writefln("Dong: Bounced off of top wall.");
+        debug writefln("Dang: Bounced off of top wall.");
+        PlaySound(Track.DANG);
     }
+
+}
+
+
+private void PlaySound(ulong trackIndex)
+{
+    SDL_LockAudioDevice(audioDeviceId);
+    audioManager.PlayTrack(trackIndex);
+    SDL_UnlockAudioDevice(audioDeviceId);
 }
 
