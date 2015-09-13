@@ -71,11 +71,16 @@ Our debug output isn't organized.
 From an early stage, get a system set up so we can build HTML documentation.
 
 Problem: Everything is importing everything.
-    ... this is hard to solve. Let's come back to it.
-      * Basically, every component of an Entity needs a cyclic reference: the
-        component imports entity so it can manipulate the Entity's state;
-        entity imports the component so it can contain it.
-      * Is there a way to do this without Entities containing the components?
-    Also, entity is importing derelict (!) just so that it can have a
-        HandleEvent method that just passes the event on to the control.
+Current proposal: Instead of having the Entity know the types of its Components
+but all the Components just store Entities, have the Entity store unspecified
+Components and the Components know the type of their Entity. Put the top-level
+component classes (actually interfaces?) in an entity_components.d (or some
+such). Then each specific component will know what type of Entity it applies
+to, but the Entities will just have a SetComponent method or some such, and
+some outside code will take care of actually initializing.
+  * Note: it's a little annoying that Entity construction now needs outside
+    help, instead of just all happening in the constructor.
+  * Note: we're still not implementing
+        http://gameprogrammingpatterns.com/component.html
+    correctly.
 
