@@ -23,3 +23,59 @@ Gamestate has too much in it
     other contains the functions InitGameState, UpdateGame, and
     CleanupGameState.
 
+Menu code is in main. Put it in another file.
+
+Change "worldgeometry" to just "geometry". It has some screen-geometry-related
+stuff in it. Also, move all the geometry code from physics.d to geometry.d. (If
+geometry gets too bloated, we can split it up.)
+
+We have magic numbers *everywhere*. We should instead have one or more
+parseable config files that specify the sizes, speeds, etc. of all things.
+
+There are a lot of places in the code where we have:
+    // FIXME: Do X.
+    doX();
+We should really remove FIXMEs after we fix them. Uh... and maybe have
+occasional reviews where we go over the TODOs and FIXMEs and see if any need to
+be fixed urgently or should be removed (either because they're not worth fixing
+or because they're already fixed). Also, make sure we all understand what the
+comments are proposing.
+  * Also, exercise proper TODO/FIXME discipline.
+      - Greg proposes not using XXX.
+  * Also, put a timelimit on how long we can leave in "TODO: Comment better"
+    (which should actually be "FIXME: Comment better").
+      - Probably just don't do anything else until you've resolved all of your
+        "FIXME: Comment"s.
+
+Proposal: also have code reviews with the goal that every piece of code is
+understood by at least 2 developers? (That is, by the one who wrote it and at
+least one other.)
+  * Probably review regular comments as well...
+  * Basicall, we should just cycle through it all, and have people read
+    different parts of the code.
+
+We have very little error/exception handling. We should practice that from an
+early stage.
+
+We probably don't actually clean up most of our resources.
+
+Let's add bug tracking next time. Also let's use unit tests. And contracts. All
+that fun stuff.
+
+Our debug output isn't organized.
+    Should have different debug levels.
+    Should remove old, no-longer-relevant debug code.
+    For debug output that's only useful for a specific reason, hide it behind a
+        specific identifier (`debug (Scoring)` or whatever).
+
+From an early stage, get a system set up so we can build HTML documentation.
+
+Problem: Everything is importing everything.
+    ... this is hard to solve. Let's come back to it.
+      * Basically, every component of an Entity needs a cyclic reference: the
+        component imports entity so it can manipulate the Entity's state;
+        entity imports the component so it can contain it.
+      * Is there a way to do this without Entities containing the components?
+    Also, entity is importing derelict (!) just so that it can have a
+        HandleEvent method that just passes the event on to the control.
+
