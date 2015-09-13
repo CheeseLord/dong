@@ -11,3 +11,15 @@ needs to dynamic-cast its parent to a Paddle before it can get the max speed.
 Proposed solution: just don't have a top-level PhysicsComponent class. Maybe
 have an interface instead?
 
+Control code is in gamestate.d. This is silly.
+Proposed solution:
+  * Initialize controllers to null (or some such) when we initialize the
+    Entities, then create and attach actual controllers later, in a function
+    InitControls in control.d.
+
+Gamestate has too much in it
+  * Separate gamestate into two modules. One contains the global definitions
+    (including the scores and other structs currently in other files). The
+    other contains the functions InitGameState, UpdateGame, and
+    CleanupGameState.
+
