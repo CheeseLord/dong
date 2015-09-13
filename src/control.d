@@ -1,4 +1,5 @@
 import std.stdio;
+import std.math;
 
 // For event handling.
 import derelict.sdl2.sdl;
@@ -164,6 +165,100 @@ class MouseControlComponent : ControlComponent {
         }
         else {
             parent_.yVel = (targetY_ - parent_.centerY) / elapsedTime;
+        }
+    }
+}
+
+class AIControlComponent : ControlComponent {
+    private double targetY_;
+
+    this(Entity parent)
+    {
+        super(parent);
+    }
+
+    override void Update(double elapsedTime)
+    {
+        SetTargetY();
+        parent_.yVel = (targetY_ - parent_.centerY) / elapsedTime;
+    }
+
+    void SetTargetY()
+    {
+        // By default, don't move.
+        targetY_ = parent_.centerY;
+    }
+}
+
+class DumbAIControlComponent : AIControlComponent {
+    this(Entity parent)
+    {
+        super(parent);
+    }
+
+    override void SetTargetY()
+    {
+        targetY_ = gameState.ball.centerY;
+    }
+}
+
+class LessDumbAIControlComponent : AIControlComponent {
+    this(Entity parent)
+    {
+        super(parent);
+    }
+
+    override void SetTargetY()
+    {
+        Entity ball = gameState.ball;
+        if ((parent_.bounceDir == BounceDirection.LEFT &&
+             ball.xVel < 0) ||
+            (parent_.bounceDir == BounceDirection.RIGHT &&
+             ball.xVel >= 0))
+        {
+            targetY_ = gameState.gameRect.centerY;
+        }
+        else
+        {
+            // XXX: Yes, lots of positions are hardcoded.
+
+            // Find how far the ball needs to go in each direction.
+            double xDist = abs(parent_.centerX - ball.centerX);
+            xDist -= (parent_.w + ball.w) / 2;
+            if (xDist <= 0) { return; }
+            double yDist = xDist * ball.yVel / abs(ball.xVel);
+
+            // Find the bounds of the play field.
+            // XXX: Yes, this probably should be done in gamestate.
+            double realTop = gameState.gameRect.top
+                             + WALL_WIDTH + ball.h / 2;
+            double realBottom = gameState.gameRect.bottom
+                                - WALL_WIDTH - ball.h / 2;
+
+            // Skip to the end of the reflections.
+            bool goingUp = ball.yVel < 0;
+            double endY = ball.centerY + yDist;
+            while (true) {
+                if (endY < realTop) {
+                    goingUp = false;
+                    endY = 2 * realTop - endY;
+                }
+                else if (endY > realBottom) {
+                    goingUp = true;
+                    endY = 2 * realBottom - endY;
+                }
+                else {
+                    break;
+                }
+            }
+
+            // Make sure the right end of the paddle hits the ball.
+            if (goingUp) {
+                targetY_ = endY + (parent_.h / 2);
+            }
+            else {
+                targetY_ = endY - (parent_.h / 2);
+            }
         }
     }
 }

@@ -9,11 +9,24 @@ import control;
 import derelict.sdl2.sdl;
 
 
+// TODO: We'll probably want to make the sides of the game area constant
+// instead of defining them by these sizes.
+const double WALL_WIDTH = 5.0;
+const double PADDLE_WIDTH = 5.0;
+const double PADDLE_HEIGHT = 10.0;
+const double PADDLE_MAX_SPEED = 30.0;
+
 private struct GameState {
     // Screen-independent size.
     // FIXME: Remove evil magic numbers.
-    double worldWidth  = 200.0;
-    double worldHeight = 100.0;
+    WorldRect gameRect = {
+        x: 0,
+        y: 0,
+        w: 200,
+        h: 100,
+    };
+    pure @property const double worldWidth()  { return gameRect.w; }
+    pure @property const double worldHeight() { return gameRect.h; }
 
     Ball ball;
     Entity[] entities;
@@ -23,13 +36,6 @@ GameState gameState;
 
 void InitGameState()
 {
-    // TODO: We'll probably want to make the sides of the game area constant
-    // instead of defining them by these sizes.
-    const double WALL_WIDTH = 5.0;
-    const double PADDLE_WIDTH = 5.0;
-    const double PADDLE_HEIGHT = 10.0;
-    const double PADDLE_MAX_SPEED = 30.0;
-
     // Left paddle
     Paddle leftPaddle = new Paddle(
         WorldRect(
@@ -43,9 +49,7 @@ void InitGameState()
         WALL_WIDTH,
         gameState.worldHeight - WALL_WIDTH,
     );
-    leftPaddle.SetControl(new KeyControlComponent(leftPaddle,
-                                                  SDL_SCANCODE_W,
-                                                  SDL_SCANCODE_S));
+    leftPaddle.SetControl(new LessDumbAIControlComponent(leftPaddle));
     gameState.entities ~= leftPaddle;
 
     // Right paddle
