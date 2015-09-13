@@ -14,7 +14,7 @@ import derelict.sdl2.sdl;
 import observer;
 
 
-enum Track: ulong {DING = 0, DONG = 1, DANG = 2};
+enum Track: ulong {DING = 0, DONG = 1, DANG = 2, BLIP = 3};
 
 struct AudioTrackPosition {
     long trackIndex; // -1 means don't play anything.
@@ -116,7 +116,8 @@ void InitSound()
     auto soundsToLoad = [
         SoundAndFile(Track.DING, cast(const char *)("sounds/ding.wav")),
         SoundAndFile(Track.DONG, cast(const char *)("sounds/dong.wav")),
-        SoundAndFile(Track.DANG, cast(const char *)("sounds/dang.wav"))
+        SoundAndFile(Track.DANG, cast(const char *)("sounds/dang.wav")),
+        SoundAndFile(Track.BLIP, cast(const char *)("sounds/blip.wav")),
     ];
 
     foreach (sound; soundsToLoad) {
@@ -212,10 +213,12 @@ extern (C) nothrow void AudioCallback(void *userdata, ubyte *stream, int len)
 void OnBallPass(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_PASS_LEFT) {
-        debug writefln("Whoosh! Passed left.");
+        debug writefln("Dang: Passed left.");
+        PlaySound(Track.DANG);
     }
     else if (eventInfo == NotifyType.BALL_PASS_RIGHT) {
-        debug writefln("Whoosh! Passed right.");
+        debug writefln("Dang: Passed right.");
+        PlaySound(Track.DANG);
     }
 }
 
@@ -234,12 +237,12 @@ void HitPaddle(NotifyType eventInfo)
 void HitWall(NotifyType eventInfo)
 {
     if (eventInfo == NotifyType.BALL_BOUNCE_BOTTOM_WALL) {
-        debug writefln("Dang: Bounced off of bottom wall.");
-        PlaySound(Track.DANG);
+        debug writefln("Blip: Bounced off of bottom wall.");
+        PlaySound(Track.BLIP);
     }
     else if (eventInfo == NotifyType.BALL_BOUNCE_TOP_WALL) {
-        debug writefln("Dang: Bounced off of top wall.");
-        PlaySound(Track.DANG);
+        debug writefln("Blip: Bounced off of top wall.");
+        PlaySound(Track.BLIP);
     }
 
 }
