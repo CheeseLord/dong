@@ -1,0 +1,13 @@
+Having all Entities in a giant list is not great. We should have named pointers
+to interesting entites (ball, left paddle, right paddle) in addition. They
+should be typed appropriately, so we don't need to dynamic-cast down from
+Entity every time. Also/alternatively, maybe have lists that contain Entities
+of a given type, in addition to the master Entity list? Ex: a Paddle list, a
+Wall list.
+
+Problem: components of an Entity store a reference to that Entity as an Entity,
+not an appropriate subclass. This leads to, for example: the PaddlePhysics
+needs to dynamic-cast its parent to a Paddle before it can get the max speed.
+Proposed solution: just don't have a top-level PhysicsComponent class. Maybe
+have an interface instead?
+
