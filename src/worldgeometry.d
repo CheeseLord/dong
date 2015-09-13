@@ -45,19 +45,6 @@ struct WorldRect {
     pure @property const WorldPoint BR() { return WorldPoint(x + w, y + h); }
 }
 
-template GetEdgeCorners(string direction) if (direction == "left")   {
-    enum GetEdgeCorners : string { corner1 = "TL", corner2 = "BL" }
-}
-template GetEdgeCorners(string direction) if (direction == "right")  {
-    enum GetEdgeCorners : string { corner1 = "TR", corner2 = "BR" }
-}
-template GetEdgeCorners(string direction) if (direction == "top")    {
-    enum GetEdgeCorners : string { corner1 = "TL", corner2 = "TR" }
-}
-template GetEdgeCorners(string direction) if (direction == "bottom") {
-    enum GetEdgeCorners : string { corner1 = "BL", corner2 = "BR" }
-}
-
 WorldRect CenteredWRect(double centerX, double centerY, double w, double h)
 {
     return WorldRect(
